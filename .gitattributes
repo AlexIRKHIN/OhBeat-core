@@ -1,2 +1,11 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize text files to LF in the repository and in the working copy:
+# scripts and configs are mounted into Linux containers, where CRLF breaks them.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.webp binary
+*.wav binary
+*.mp3 binary
+*.zip binary
+*.pdf binary

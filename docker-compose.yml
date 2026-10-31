@@ -1,0 +1,139 @@
+name: ohbeat
+
+# Local environment of OhBeat. Start:  cp .env.example .env && docker compose up --build
+
+x-backend: &backend
+  build: ./backend
+  image: ohbeat/backend:dev
+  env_file: .env
+  environment: &backend-env
+    DATABASE_URL: postgresql+psycopg://${DB_APP_USER}:${DB_APP_PASSWORD}@postgres:5432/${DB_NAME}
+    MIGRATIONS_DATABASE_URL: postgresql+psycopg://${DB_OWNER_USER}:${DB_OWNER_PASSWORD}@postgres:5432/${DB_NAME}
+    S3_INTERNAL_ENDPOINT: http://minio:9000
+    S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+    S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+  volumes:
+    - ./backend:/app
+    # Documentation repository, read-only: tests compare the migration with schema.sql
+    - ../OhBeat-System-Analysis:/spec:ro
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_OWNER_USER: ${DB_OWNER_USER}
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD}
+      DB_APP_USER: ${DB_APP_USER}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      TZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init-roles.sh:/docker-entrypoint-initdb.d/01-init-roles.sh:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME}"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  minio:
+    # Built from source: public MinIO images are no longer distributed (ADR 0008)
+    build: ./infra/minio
+    image: ohbeat/minio:RELEASE.2025-04-22T22-12-26Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # Browser uploads files directly from the SPA origin (presigned POST)
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9000/minio/health/live"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  storage-init:
+    <<: *backend
+    command: ["python", "-m", "seeds.init_storage"]
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  migrate:
+    <<: *backend
+    command: ["sh", "-c", "alembic upgrade head && python -m seeds.run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    command:
+      - uvicorn
+      - app.main:app
+      - --host=0.0.0.0
+      - --port=8000
+      - --reload
+      - --proxy-headers
+      - --forwarded-allow-ips=*
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      storage-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0"]
+    environment:
+      API_PROXY_TARGET: http://api:8000
+      # File change events do not cross the Windows bind mount, so Vite polls
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  rabbitmqdata:
+  miniodata:
+  frontend_node_modules:
