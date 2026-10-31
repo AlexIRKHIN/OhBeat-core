@@ -10,14 +10,14 @@ import { setLanguage } from "../i18n";
 function LanguageSwitch() {
   const { i18n } = useTranslation();
   return (
-    <div className="flex overflow-hidden rounded-md border border-slate-300 text-xs font-medium" role="group">
+    <div className="flex overflow-hidden rounded-md border border-line text-xs font-medium" role="group">
       {(["ru", "en"] as const).map((lang) => (
         <button
           key={lang}
           type="button"
           onClick={() => setLanguage(lang)}
           aria-pressed={i18n.language === lang}
-          className={`px-2 py-1 uppercase ${i18n.language === lang ? "bg-brand text-white" : "bg-white text-slate-700"}`}
+          className={`px-2 py-1 uppercase ${i18n.language === lang ? "bg-accent-deep text-white" : "bg-panel text-soft"}`}
         >
           {lang}
         </button>
@@ -27,7 +27,7 @@ function LanguageSwitch() {
 }
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `block rounded-md px-3 py-2 text-sm ${isActive ? "bg-brand-light text-brand-dark" : "text-slate-700 hover:bg-slate-100"}`;
+  `block whitespace-nowrap rounded-md px-3 py-2 text-sm ${isActive ? "bg-accent/15 text-cyan" : "text-soft hover:bg-panel-2"}`;
 
 export function Layout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -55,7 +55,7 @@ export function Layout({ children }: { children: ReactNode }) {
           {t("nav.becomeProducer")}
         </NavLink>
       )}
-      <button type="button" onClick={logout} className="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">
+      <button type="button" onClick={logout} className="block w-full rounded-md px-3 py-2 text-left text-sm text-soft hover:bg-panel-2">
         {t("nav.logout")}
       </button>
     </>
@@ -72,9 +72,9 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-line bg-panel">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Link to="/" className="text-lg font-bold text-brand" onClick={close}>
+          <Link to="/" className="text-lg font-bold text-cyan" onClick={close}>
             OhBeat
           </Link>
           <NavLink to="/" end className={navClass}>
@@ -82,7 +82,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </NavLink>
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitch />
-            {user && <span className="hidden max-w-[10rem] truncate text-sm text-slate-600 sm:inline">{user.display_name}</span>}
+            {user && <span className="hidden max-w-[10rem] truncate text-sm text-soft sm:inline">{user.display_name}</span>}
             <button
               type="button"
               className="btn-secondary px-3 md:hidden"

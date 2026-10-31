@@ -130,11 +130,11 @@ export function ProfilePage() {
       <PageTitle>{t("profile.title")}</PageTitle>
       <form className="card space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-panel-2">
             {shownAvatar ? (
               <img src={shownAvatar} alt={t("profile.avatar")} className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-3xl text-slate-400">
+              <div className="flex h-full w-full items-center justify-center text-3xl text-muted">
                 {user.display_name.slice(0, 1).toUpperCase()}
               </div>
             )}
@@ -163,13 +163,13 @@ export function ProfilePage() {
             {uploading ? (
               <div className="w-56">
                 {/* NFR-10: upload progress bar */}
-                <div className="h-2 overflow-hidden rounded bg-slate-200">
-                  <div className="h-full bg-brand transition-all" style={{ width: `${avatar.percent}%` }} />
+                <div className="h-2 overflow-hidden rounded bg-panel-2">
+                  <div className="h-full bg-orange transition-all" style={{ width: `${avatar.percent}%` }} />
                 </div>
-                <p className="mt-1 text-xs text-slate-500">{t("profile.uploading", { percent: avatar.percent })}</p>
+                <p className="mt-1 text-xs text-muted">{t("profile.uploading", { percent: avatar.percent })}</p>
               </div>
             ) : (
-              <p className={`text-xs ${avatarError ? "text-red-600" : "text-slate-500"}`}>{avatarError ?? t("profile.avatarRules")}</p>
+              <p className={`text-xs ${avatarError ? "text-danger" : "text-muted"}`}>{avatarError ?? t("profile.avatarRules")}</p>
             )}
           </div>
         </div>
@@ -186,7 +186,7 @@ export function ProfilePage() {
           <textarea id="bio" rows={4} className={`input ${errors.bio ? "input-error" : ""}`} {...register("bio")} />
         </Field>
 
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-soft">
           {t("profile.roles")}: {user.roles.map((role) => t(`profile.role_${role}`)).join(", ")}
         </p>
 

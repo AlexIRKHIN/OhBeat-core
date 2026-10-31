@@ -18,17 +18,17 @@ export function Field({
 }) {
   return (
     <div className="space-y-1">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-slate-700">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-cyan">
         {label}
       </label>
       {children}
       {/* NFR-11: the error text is shown right next to the field */}
       {error ? (
-        <p id={`${htmlFor}-error`} className="text-sm text-red-600">
+        <p id={`${htmlFor}-error`} className="text-sm text-danger">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p className="text-xs text-muted">{hint}</p>
       ) : null}
     </div>
   );
@@ -46,7 +46,7 @@ export function Spinner({ className = "" }: { className?: string }) {
 export function LoadingState() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-center gap-2 py-16 text-slate-500">
+    <div className="flex items-center justify-center gap-2 py-16 text-muted">
       <Spinner /> {t("common.loading")}
     </div>
   );
@@ -56,7 +56,7 @@ export function ErrorState({ onRetry, text }: { onRetry?: () => void; text?: str
   const { t } = useTranslation();
   return (
     <div className="card flex flex-col items-center gap-3 text-center">
-      <p className="text-slate-700">{text ?? t("common.loadError")}</p>
+      <p className="text-soft">{text ?? t("common.loadError")}</p>
       {onRetry && (
         <button type="button" className="btn-secondary" onClick={onRetry}>
           {t("common.retry")}
@@ -67,7 +67,7 @@ export function ErrorState({ onRetry, text }: { onRetry?: () => void; text?: str
 }
 
 export function PageTitle({ children }: { children: ReactNode }) {
-  return <h1 className="mb-4 text-2xl font-semibold sm:text-3xl">{children}</h1>;
+  return <h1 className="mb-4 text-2xl font-semibold tracking-wide text-cyan sm:text-3xl">{children}</h1>;
 }
 
 export function NotFoundPage() {

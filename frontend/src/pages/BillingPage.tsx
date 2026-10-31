@@ -171,10 +171,10 @@ function BillingForm({ initial }: { initial: Billing | null }) {
   return (
     <div className="mx-auto max-w-2xl">
       <PageTitle>{t("billing.title")}</PageTitle>
-      <p className="mb-4 text-sm text-slate-600">{t("billing.intro")}</p>
+      <p className="mb-4 text-sm text-soft">{t("billing.intro")}</p>
       <form className="card space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-slate-700">{t("billing.payerType")}</legend>
+          <legend className="mb-2 text-sm font-medium text-cyan">{t("billing.payerType")}</legend>
           <div className="flex flex-wrap gap-4">
             {(["individual", "business"] as const).map((type) => (
               <label key={type} className="flex items-center gap-2 text-sm">
@@ -236,7 +236,7 @@ function BillingForm({ initial }: { initial: Billing | null }) {
 
         {/* UI spec §2 item 1: for a business the form expands with the company fields */}
         {payerType === "business" && (
-          <div className="space-y-4 border-t border-slate-200 pt-4">
+          <div className="space-y-4 border-t border-line pt-4">
             <Field label={t("billing.companyName")} htmlFor="company_name" error={errors.company_name?.message}>
               <input id="company_name" autoComplete="organization" placeholder="ООО «Звук»" className={`input ${errors.company_name ? "input-error" : ""}`} {...register("company_name")} />
             </Field>
@@ -257,13 +257,13 @@ function BillingForm({ initial }: { initial: Billing | null }) {
           </div>
         )}
 
-        {formError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>}
+        {formError && <p className="alert-error">{formError}</p>}
 
         <button type="submit" className="btn-primary w-full sm:w-auto" disabled={!isValid || isSubmitting}>
           {isSubmitting && <Spinner />}
           {isSubmitting ? t("common.saving") : t("billing.submit")}
         </button>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           {t("billing.privacyBefore")}
           <Link to="/legal/privacy" target="_blank" className="link">
             {t("auth.pdConsentLink")}

@@ -33,7 +33,7 @@ export function ProducerConnectPage() {
     return (
       <div className="mx-auto max-w-xl">
         <PageTitle>{t("producer.title")}</PageTitle>
-        <div className="card text-emerald-700">{t(justConnected ? "producer.success" : "producer.already")}</div>
+        <div className="card text-accent-light">{t(justConnected ? "producer.success" : "producer.already")}</div>
       </div>
     );
   }
@@ -43,7 +43,7 @@ export function ProducerConnectPage() {
   return (
     <div className="mx-auto max-w-xl">
       <PageTitle>{t("producer.title")}</PageTitle>
-      <p className="mb-4 text-sm text-slate-600">{t("producer.intro")}</p>
+      <p className="mb-4 text-sm text-soft">{t("producer.intro")}</p>
       {billing.data ? (
         <ProducerForm onConnected={() => setJustConnected(true)} />
       ) : (
@@ -100,7 +100,7 @@ function ProducerForm({ onConnected }: { onConnected: () => void }) {
   return (
     <form className="card space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
       <fieldset>
-        <legend className="mb-2 text-sm font-medium text-slate-700">{t("producer.taxStatus")}</legend>
+        <legend className="mb-2 text-sm font-medium text-cyan">{t("producer.taxStatus")}</legend>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
           {(["individual", "self_employed", "ip"] as const).map((status) => (
             <label key={status} className="flex items-center gap-2 text-sm">
@@ -125,7 +125,7 @@ function ProducerForm({ onConnected }: { onConnected: () => void }) {
             </Link>
           </span>
         </label>
-        {errors.pep_agreement && <p className="text-sm text-red-600">{errors.pep_agreement.message}</p>}
+        {errors.pep_agreement && <p className="text-sm text-danger">{errors.pep_agreement.message}</p>}
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1" {...register("license_terms")} />
           <span>
@@ -135,10 +135,10 @@ function ProducerForm({ onConnected }: { onConnected: () => void }) {
             </Link>
           </span>
         </label>
-        {errors.license_terms && <p className="text-sm text-red-600">{errors.license_terms.message}</p>}
+        {errors.license_terms && <p className="text-sm text-danger">{errors.license_terms.message}</p>}
       </div>
 
-      {formError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>}
+      {formError && <p className="alert-error">{formError}</p>}
 
       <button type="submit" className="btn-primary w-full sm:w-auto" disabled={!isValid || isSubmitting}>
         {isSubmitting && <Spinner />}

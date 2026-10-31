@@ -61,7 +61,7 @@ export function LoginPage() {
           <input id="password" type="password" autoComplete="current-password" className="input" {...register("password")} />
         </Field>
         {formError && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="alert-error">
             {formError}
           </p>
         )}
@@ -69,7 +69,7 @@ export function LoginPage() {
           {isSubmitting && <Spinner />}
           {t("auth.loginSubmit")}
         </button>
-        <p className="text-center text-sm text-slate-600">
+        <p className="text-center text-sm text-soft">
           {t("auth.noAccount")}{" "}
           <Link to="/register" className="link">
             {t("nav.register")}

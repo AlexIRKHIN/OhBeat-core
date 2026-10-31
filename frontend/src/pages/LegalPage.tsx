@@ -17,7 +17,7 @@ export function LegalPage() {
   return (
     <article className="card">
       <PageTitle>{t(TITLES[doc])}</PageTitle>
-      <p className="text-slate-600">{t("legal.placeholder")}</p>
+      <p className="text-soft">{t("legal.placeholder")}</p>
     </article>
   );
 }

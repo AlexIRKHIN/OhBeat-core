@@ -20,9 +20,9 @@ export function useToast(): ToastApi {
 }
 
 const KIND_CLASS: Record<Kind, string> = {
-  success: "bg-emerald-600",
-  error: "bg-red-600",
-  info: "bg-slate-800",
+  success: "bg-accent-deep",
+  error: "bg-danger",
+  info: "border border-line bg-panel-2",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -58,7 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4" aria-live="polite">
         {!online && (
-          <div role="alert" className="pointer-events-auto rounded-lg bg-red-700 px-4 py-2 text-sm text-white shadow-lg">
+          <div role="alert" className="pointer-events-auto rounded-lg bg-danger px-4 py-2 text-sm text-white shadow-lg">
             {t("common.offline")}
           </div>
         )}

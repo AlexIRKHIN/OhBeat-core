@@ -79,7 +79,7 @@ export function RegisterPage() {
               </Link>
             </span>
           </label>
-          {errors.pd_consent && <p className="text-sm text-red-600">{errors.pd_consent.message}</p>}
+          {errors.pd_consent && <p className="text-sm text-danger">{errors.pd_consent.message}</p>}
           <label className="flex items-start gap-2 text-sm">
             <input type="checkbox" className="mt-1" {...register("pep_agreement")} />
             <span>
@@ -89,17 +89,17 @@ export function RegisterPage() {
               </Link>
             </span>
           </label>
-          {errors.pep_agreement && <p className="text-sm text-red-600">{errors.pep_agreement.message}</p>}
+          {errors.pep_agreement && <p className="text-sm text-danger">{errors.pep_agreement.message}</p>}
         </div>
 
-        {formError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>}
+        {formError && <p className="alert-error">{formError}</p>}
 
         {/* FR-3 / NFR-11: the button stays disabled while the form has errors */}
         <button type="submit" className="btn-primary w-full" disabled={!isValid || isSubmitting}>
           {isSubmitting && <Spinner />}
           {isSubmitting ? t("common.sending") : t("auth.registerSubmit")}
         </button>
-        <p className="text-center text-sm text-slate-600">
+        <p className="text-center text-sm text-soft">
           {t("auth.haveAccount")}{" "}
           <Link to="/login" className="link">
             {t("nav.login")}
