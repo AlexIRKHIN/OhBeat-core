@@ -1,0 +1,288 @@
+// NFR-26: Russian by default and English, switched in the header.
+// ASSUMPTION: GAP-13 — the choice is kept in localStorage and sent to the API as Accept-Language.
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+
+const ru = {
+  common: {
+    loading: "Загрузка…",
+    retry: "Повторить",
+    save: "Сохранить",
+    saving: "Сохранение…",
+    sending: "Отправка…",
+    errorGeneric: "Что-то пошло не так. Попробуйте ещё раз.",
+    loadError: "Не удалось загрузить данные",
+    offline: "Нет соединения с интернетом",
+    serverUnreachable: "Нет связи с сервером",
+    backOnline: "Соединение восстановлено",
+    notFound: "Страница не найдена",
+    toHome: "На главную",
+  },
+  nav: {
+    catalog: "Каталог",
+    profile: "Профиль",
+    billing: "Данные покупателя",
+    becomeProducer: "Подключиться к продажам",
+    logout: "Выйти",
+    login: "Войти",
+    register: "Регистрация",
+    menu: "Меню",
+  },
+  home: {
+    title: "Биты с договором и честной оплатой",
+    subtitle: "Продюсеры продают лицензии на инструменталы, артисты покупают их с автоматическим договором.",
+    catalogSoon: "Каталог битов появится в следующих срезах разработки.",
+  },
+  auth: {
+    registerTitle: "Регистрация",
+    loginTitle: "Вход",
+    email: "Email",
+    password: "Пароль",
+    displayName: "Имя или псевдоним",
+    passwordHint: "Не менее 8 символов, заглавная латинская буква, цифра и спецсимвол",
+    pdConsentBefore: "Я даю согласие на обработку персональных данных согласно ",
+    pdConsentLink: "Политике обработки персональных данных",
+    pepBefore: "Я принимаю ",
+    pepLink: "Соглашение об использовании простой электронной подписи",
+    registerSubmit: "Зарегистрироваться",
+    loginSubmit: "Войти",
+    haveAccount: "Уже есть аккаунт?",
+    noAccount: "Ещё нет аккаунта?",
+  },
+  profile: {
+    title: "Профиль",
+    displayName: "Имя или псевдоним",
+    bio: "О себе",
+    charsLeft: "Осталось символов: {{count}}",
+    avatar: "Аватар",
+    avatarChoose: "Выбрать изображение",
+    avatarRemove: "Убрать аватар",
+    avatarRules: "JPG, PNG или WebP, до 5 МБ, до 2048×2048 px",
+    uploading: "Загрузка {{percent}}%",
+    uploadFailed: "Не удалось загрузить файл",
+    saved: "Профиль сохранён",
+    roles: "Роли",
+    role_artist: "Артист",
+    role_producer: "Продюсер",
+    role_admin: "Администратор",
+  },
+  billing: {
+    title: "Данные покупателя",
+    intro: "Эти данные попадут в лицензионный договор. Продюсер заполняет ту же форму: его данные идут в договор как данные Лицензиара.",
+    payerType: "Тип покупателя",
+    individual: "Физ. лицо",
+    business: "ИП или юр. лицо",
+    lastName: "Фамилия",
+    firstName: "Имя",
+    middleName: "Отчество (если есть)",
+    email: "Email для уведомлений",
+    emailHint: "Сюда придут уведомления о заказах со ссылкой на «Мои покупки»",
+    phone: "Телефон",
+    phoneHint: "Обязателен для покупки Exclusive: на него придёт код подписи",
+    countryCode: "Код страны",
+    companyName: "Название организации",
+    inn: "ИНН",
+    legalAddress: "Юридический адрес",
+    submit: "Сохранить и продолжить",
+    saved: "Данные сохранены",
+    privacyBefore: "Обработка данных — по ",
+  },
+  producer: {
+    title: "Подключение к продажам",
+    intro: "После подключения вы сможете публиковать биты и получать деньги за продажи.",
+    already: "Вы уже подключены к продажам.",
+    needBilling: "Сначала заполните данные для договора: они попадут в договор как данные Лицензиара.",
+    fillBilling: "Заполнить данные",
+    taxStatus: "Налоговый статус",
+    tax_individual: "Физическое лицо",
+    tax_self_employed: "Самозанятый",
+    tax_ip: "Индивидуальный предприниматель",
+    yookassaId: "Идентификатор продавца в ЮKassa",
+    yookassaHint: "Нужен, чтобы деньги за продажи сразу уходили вам (сплитование)",
+    pepBefore: "Я принимаю ",
+    pepLink: "Соглашение об использовании простой электронной подписи",
+    termsBefore: "Я принимаю ",
+    termsLink: "типовые условия лицензий",
+    submit: "Подключиться",
+    success: "Готово! Теперь вы Продюсер.",
+  },
+  validation: {
+    required: "Обязательное поле",
+    email: "Некорректный email",
+    password: "Не менее 8 символов, заглавная латинская буква, цифра и спецсимвол",
+    minLength: "Минимум {{count}} символа",
+    maxLength: "Максимум {{count}} символов",
+    nameLetters: "Только буквы, пробелы и дефисы",
+    phone: "Введите номер полностью",
+    innFormat: "10 цифр для организации или 12 для ИП",
+    innChecksum: "Неверная контрольная сумма ИНН",
+    consent: "Нужно ваше согласие",
+    imageType: "Допустимы только JPG, PNG или WebP",
+    imageSize: "Файл больше 5 МБ",
+    imageDimensions: "Разрешение больше 2048×2048 px",
+  },
+  legal: {
+    privacy: "Политика обработки персональных данных",
+    pep: "Соглашение об использовании простой электронной подписи",
+    licenseTerms: "Типовые условия лицензий",
+    placeholder: "Текст документа появится позже: он требует юридической проверки (GAP-31).",
+  },
+};
+
+type Resources = typeof ru;
+
+const en: Resources = {
+  common: {
+    loading: "Loading…",
+    retry: "Retry",
+    save: "Save",
+    saving: "Saving…",
+    sending: "Sending…",
+    errorGeneric: "Something went wrong. Please try again.",
+    loadError: "Could not load data",
+    offline: "No internet connection",
+    serverUnreachable: "Cannot reach the server",
+    backOnline: "Connection restored",
+    notFound: "Page not found",
+    toHome: "Go home",
+  },
+  nav: {
+    catalog: "Catalog",
+    profile: "Profile",
+    billing: "Contract details",
+    becomeProducer: "Start selling",
+    logout: "Sign out",
+    login: "Sign in",
+    register: "Sign up",
+    menu: "Menu",
+  },
+  home: {
+    title: "Beats with a contract and fair payment",
+    subtitle: "Producers sell licenses for instrumentals, artists buy them with an automatic contract.",
+    catalogSoon: "The beat catalog will appear in the next development slices.",
+  },
+  auth: {
+    registerTitle: "Sign up",
+    loginTitle: "Sign in",
+    email: "Email",
+    password: "Password",
+    displayName: "Name or alias",
+    passwordHint: "At least 8 characters, an uppercase Latin letter, a digit and a special character",
+    pdConsentBefore: "I consent to the processing of personal data under the ",
+    pdConsentLink: "Personal Data Policy",
+    pepBefore: "I accept the ",
+    pepLink: "Simple Electronic Signature Agreement",
+    registerSubmit: "Sign up",
+    loginSubmit: "Sign in",
+    haveAccount: "Already have an account?",
+    noAccount: "No account yet?",
+  },
+  profile: {
+    title: "Profile",
+    displayName: "Name or alias",
+    bio: "About",
+    charsLeft: "Characters left: {{count}}",
+    avatar: "Avatar",
+    avatarChoose: "Choose image",
+    avatarRemove: "Remove avatar",
+    avatarRules: "JPG, PNG or WebP, up to 5 MB, up to 2048×2048 px",
+    uploading: "Uploading {{percent}}%",
+    uploadFailed: "Could not upload the file",
+    saved: "Profile saved",
+    roles: "Roles",
+    role_artist: "Artist",
+    role_producer: "Producer",
+    role_admin: "Administrator",
+  },
+  billing: {
+    title: "Contract details",
+    intro: "These details go into the license contract. Producers fill in the same form: their details go into the contract as the Licensor's.",
+    payerType: "Buyer type",
+    individual: "Individual",
+    business: "Sole proprietor or company",
+    lastName: "Last name",
+    firstName: "First name",
+    middleName: "Middle name (if any)",
+    email: "Email for notifications",
+    emailHint: "Order notifications with a link to “My purchases” are sent here",
+    phone: "Phone",
+    phoneHint: "Required to buy Exclusive: the signature code is sent to it",
+    countryCode: "Country code",
+    companyName: "Company name",
+    inn: "INN (tax ID)",
+    legalAddress: "Legal address",
+    submit: "Save and continue",
+    saved: "Details saved",
+    privacyBefore: "Data is processed under the ",
+  },
+  producer: {
+    title: "Start selling",
+    intro: "Once connected, you can publish beats and get paid for sales.",
+    already: "You are already connected to sales.",
+    needBilling: "Fill in your contract details first: they go into the contract as the Licensor's.",
+    fillBilling: "Fill in details",
+    taxStatus: "Tax status",
+    tax_individual: "Individual",
+    tax_self_employed: "Self-employed",
+    tax_ip: "Sole proprietor",
+    yookassaId: "YooKassa seller ID",
+    yookassaHint: "Needed so that money for sales goes straight to you (split payments)",
+    pepBefore: "I accept the ",
+    pepLink: "Simple Electronic Signature Agreement",
+    termsBefore: "I accept the ",
+    termsLink: "standard license terms",
+    submit: "Connect",
+    success: "Done! You are a Producer now.",
+  },
+  validation: {
+    required: "Required field",
+    email: "Invalid email",
+    password: "At least 8 characters, an uppercase Latin letter, a digit and a special character",
+    minLength: "At least {{count}} characters",
+    maxLength: "At most {{count}} characters",
+    nameLetters: "Only letters, spaces and hyphens",
+    phone: "Enter the full number",
+    innFormat: "10 digits for a company or 12 for a sole proprietor",
+    innChecksum: "Invalid INN checksum",
+    consent: "Your consent is required",
+    imageType: "Only JPG, PNG or WebP are allowed",
+    imageSize: "File is larger than 5 MB",
+    imageDimensions: "Resolution is larger than 2048×2048 px",
+  },
+  legal: {
+    privacy: "Personal Data Policy",
+    pep: "Simple Electronic Signature Agreement",
+    licenseTerms: "Standard license terms",
+    placeholder: "The text will be added later: it requires a legal review (GAP-31).",
+  },
+};
+
+const LANGUAGE_KEY = "ohbeat.language";
+
+function initialLanguage(): "ru" | "en" {
+  try {
+    return localStorage.getItem(LANGUAGE_KEY) === "en" ? "en" : "ru";
+  } catch {
+    return "ru";
+  }
+}
+
+export function setLanguage(lang: "ru" | "en"): void {
+  void i18n.changeLanguage(lang);
+  document.documentElement.lang = lang;
+  try {
+    localStorage.setItem(LANGUAGE_KEY, lang);
+  } catch {
+    // storage may be unavailable (private mode); the choice then lives until reload
+  }
+}
+
+void i18n.use(initReactI18next).init({
+  resources: { ru: { translation: ru }, en: { translation: en } },
+  lng: initialLanguage(),
+  fallbackLng: "ru",
+  interpolation: { escapeValue: false },
+});
+document.documentElement.lang = i18n.language;
+
+export default i18n;
