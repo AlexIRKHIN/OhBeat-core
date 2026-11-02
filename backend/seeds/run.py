@@ -44,7 +44,13 @@ def ensure_user(conn, email: str, password: str, display_name: str, roles: list[
     return user_id
 
 
+# ASSUMPTION: GAP-57 — demo entries so the stop-list check can be seen; the real list is kept by the Administrator
+STOP_WORDS = ["запрещёнка", "badword", "spamword"]
+
+
 def seed_dictionaries(conn) -> None:
+    for word in STOP_WORDS:
+        conn.execute(text("INSERT INTO stop_words (word) VALUES (:w) ON CONFLICT (word) DO NOTHING"), {"w": word})
     for name in GENRES:
         conn.execute(text("INSERT INTO genres (name) VALUES (:n) ON CONFLICT (name) DO NOTHING"), {"n": name})
     for code, name, mp3, wav, stems, excl in LICENSES:

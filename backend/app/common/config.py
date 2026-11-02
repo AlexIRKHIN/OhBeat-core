@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     platform_fee_percent: Decimal = Decimal("10")
     voice_tag_interval_sec: int = 20
 
+    # RabbitMQ (outbox relay, consumer of processing results)
+    rabbitmq_url: str = "amqp://guest:guest@rabbitmq:5672/%2F"
+    relay_interval_seconds: float = 1.0  # RabbitMQ_Worker.md §2: once a second
+    relay_batch_size: int = 100
+
+    # FR-8: beats left in `uploading` are deleted after this many hours
+    upload_ttl_hours: int = 24
+
     cors_origins: list[str] = ["http://localhost:5173"]
 
 

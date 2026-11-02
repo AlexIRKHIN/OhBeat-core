@@ -7,19 +7,14 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.catalog.rules import LICENSE_CODES, MUSICAL_KEYS
 from app.common.config import get_settings
 from app.common.db import get_db
 from app.dictionaries.models import Genre, License
 
 router = APIRouter(tags=["dictionaries"])
 
-# ASSUMPTION: GAP-14 — the "system dictionary of keys": 12 major and 12 minor keys
-MUSICAL_KEYS = [
-    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
-    "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm",
-]
-
-LICENSE_ORDER = ["basic", "premium", "trackout", "exclusive"]
+LICENSE_ORDER = list(LICENSE_CODES)
 
 
 class GenreOut(BaseModel):

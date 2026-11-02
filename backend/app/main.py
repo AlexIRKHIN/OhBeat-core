@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.auth.router import router as auth_router
+from app.catalog.router import router as catalog_router
 from app.common.config import get_settings
 from app.common.db import get_engine
 from app.common.errors import install_error_handlers
@@ -42,6 +43,7 @@ API_PREFIX = "/v1"
 app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(users_router, prefix=API_PREFIX)
 app.include_router(dictionaries_router, prefix=API_PREFIX)
+app.include_router(catalog_router, prefix=API_PREFIX)
 
 
 @app.get("/health", include_in_schema=False)

@@ -28,6 +28,17 @@ def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(
     return CurrentUser(id=int(claims["sub"]), roles=frozenset(claims.get("roles", [])))
 
 
+def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> CurrentUser | None:
+    """For public endpoints that show more to a signed-in owner. A bad token is treated as a guest."""
+    if credentials is None:
+        return None
+    try:
+        claims = decode_access_token(credentials.credentials)
+    except jwt.InvalidTokenError:
+        return None
+    return CurrentUser(id=int(claims["sub"]), roles=frozenset(claims.get("roles", [])))
+
+
 def require_role(role: str):
     """Dependency factory: 403 FORBIDDEN if the user lacks the role."""
 
