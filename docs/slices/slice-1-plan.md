@@ -109,7 +109,7 @@
 | `media-results` | Потребитель `beat_results_queue` | `backend/app/background/media_results.py` |
 | `scheduler` | Периодические задачи (сейчас FR-8; в срезе 3 добавится FR-29) | `backend/app/background/scheduler.py` |
 | `notifications` | Интерфейс уведомлений и мок email: пишет письмо в лог | `backend/app/notifications/` |
-| **Media Worker** | Отдельный сервис без HTTP и без доступа к БД: Python + FFmpeg 6 + espeak-ng | `worker/` |
+| **Media Worker** | Отдельный сервис без HTTP и без доступа к БД: Python + FFmpeg 5.1 (Debian 12; NFR-17 требует 5.0+) + espeak-ng | `worker/` |
 | Мок антивируса | Находит сигнатуру EICAR; по настройке изображает недоступность | `worker/worker/antivirus.py` |
 | Образцы файлов | Скрипт генерирует хорошие и плохие файлы для ручной проверки | `worker/worker/samples.py` → `samples/` |
 
@@ -124,6 +124,7 @@
 | ZIP читается, контрольные суммы сходятся | `ARCHIVE_CORRUPTED` |
 | В ZIP только WAV (папки можно) | `ARCHIVE_CONTAINS_NON_AUDIO` |
 | Распакованный объём ≤ 3 ГБ (защита от ZIP-бомбы) | `ARCHIVE_TOO_LARGE` |
+| В архиве нет ни одного WAV | `ARCHIVE_EMPTY` |
 | Каждый WAV в архиве — валидный PCM | `INVALID_STEM` |
 | Антивирус (мок) | `VIRUS_FOUND` |
 | Обложка: JPG/PNG/WebP по сигнатуре, 1:1, ≤ 2048 px | `INVALID_COVER` |
