@@ -50,7 +50,16 @@ export function Layout({ children }: { children: ReactNode }) {
       <NavLink to="/billing" className={navClass} onClick={close}>
         {t("nav.billing")}
       </NavLink>
-      {!hasRole("producer") && (
+      {hasRole("producer") ? (
+        <>
+          <NavLink to="/producer/beats" end className={navClass} onClick={close}>
+            {t("nav.myBeats")}
+          </NavLink>
+          <NavLink to="/producer/beats/new" className={navClass} onClick={close}>
+            {t("nav.uploadBeat")}
+          </NavLink>
+        </>
+      ) : (
         <NavLink to="/producer/connect" className={navClass} onClick={close}>
           {t("nav.becomeProducer")}
         </NavLink>
