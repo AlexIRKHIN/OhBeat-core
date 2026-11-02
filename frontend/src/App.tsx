@@ -5,11 +5,13 @@ import { useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { LoadingState, NotFoundPage } from "./components/ui";
 import { BillingPage } from "./pages/BillingPage";
-import { HomePage } from "./pages/HomePage";
+import { BeatPage } from "./pages/BeatPage";
+import { CatalogPage } from "./pages/CatalogPage";
 import { LegalPage } from "./pages/LegalPage";
 import { LoginPage } from "./pages/LoginPage";
 import { MyBeatsPage } from "./pages/MyBeatsPage";
 import { ProducerConnectPage } from "./pages/ProducerConnectPage";
+import { ProducerPage } from "./pages/ProducerPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { UploadBeatPage } from "./pages/UploadBeatPage";
@@ -29,7 +31,9 @@ export function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<CatalogPage />} />
+        <Route path="/beats/:id" element={<BeatPage />} />
+        <Route path="/producers/:id" element={<ProducerPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />

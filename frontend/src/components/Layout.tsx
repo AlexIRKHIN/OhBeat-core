@@ -106,7 +106,8 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
         {open && <nav className="mx-auto max-w-5xl space-y-1 px-4 pb-3 md:hidden">{links}</nav>}
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
+      {/* pb-24 leaves room for the player bar at the bottom */}
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-6">{children}</main>
     </div>
   );
 }

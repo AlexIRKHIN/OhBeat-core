@@ -10,6 +10,7 @@ import { ApiError } from "./api/client";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import { ToastProvider } from "./components/Toasts";
+import { PlayerProvider } from "./player/Player";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +28,9 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <ToastProvider>
           <AuthProvider>
-            <App />
+            <PlayerProvider>
+              <App />
+            </PlayerProvider>
           </AuthProvider>
         </ToastProvider>
       </BrowserRouter>

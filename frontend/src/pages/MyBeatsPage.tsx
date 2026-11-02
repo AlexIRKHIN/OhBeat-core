@@ -8,12 +8,15 @@ import { Link } from "react-router-dom";
 
 import { api } from "../api/client";
 import type { BeatCard, BeatLicense, BeatPage, BeatStatus, LicenseCode } from "../api/types";
+import { toTrack } from "../components/BeatBrowser";
 import { ConfirmModal } from "../components/Modal";
 import { useToast } from "../components/Toasts";
 import { ErrorState, LoadingState, PageTitle, Spinner } from "../components/ui";
 import { formatDuration } from "../lib/beatFiles";
 import { errorText } from "../lib/errors";
 import { formatMoscowDateTime } from "../lib/validation";
+import { PlayButton } from "../player/Player";
+import { useAuth } from "../auth/AuthContext";
 
 const QUERY = ["users", "me", "beats"] as const;
 const LICENSES: LicenseCode[] = ["basic", "premium", "trackout", "exclusive"];
@@ -31,6 +34,7 @@ const STATUS_CLASS: Record<BeatStatus, string> = {
 
 export function MyBeatsPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const query = useInfiniteQuery({
     queryKey: QUERY,
     queryFn: ({ pageParam }) => api<BeatPage>(`/users/me/beats?limit=20${pageParam ? `&cursor=${pageParam}` : ""}`),
@@ -47,9 +51,16 @@ export function MyBeatsPage() {
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <PageTitle>{t("myBeats.title")}</PageTitle>
-        <Link to="/producer/beats/new" className="btn-primary">
-          {t("myBeats.upload")}
-        </Link>
+        <div className="flex gap-2">
+          {user && (
+            <Link to={`/producers/${user.id}`} className="btn-secondary">
+              {t("myBeats.publicPage")}
+            </Link>
+          )}
+          <Link to="/producer/beats/new" className="btn-primary">
+            {t("myBeats.upload")}
+          </Link>
+        </div>
       </div>
 
       {query.isPending ? (
@@ -140,8 +151,10 @@ function BeatRow({ beat }: { beat: BeatCard }) {
           </p>
         )}
 
-        {beat.preview_url && (
-          <audio controls preload="none" src={beat.preview_url} className="h-8 w-full max-w-sm" aria-label={t("myBeats.preview")} />
+        {toTrack(beat) && (
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <PlayButton track={toTrack(beat)!} /> {t("myBeats.preview")}
+          </div>
         )}
 
         {/* Prices make sense only for a beat that is or will be on sale */}
