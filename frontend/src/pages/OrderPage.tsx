@@ -1,5 +1,5 @@
 // Order (REST API §2.6, wider by GAP-63): status, items with contract numbers, totals and,
-// for Exclusive, how long the reservation lasts (FR-18). Payment is added in slice 3b.
+// for Exclusive, how long the reservation lasts (FR-18). "Go to payment" leaves for YooKassa (FR-20).
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,8 +8,10 @@ import { Link, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import type { Order } from "../api/types";
 import { useDictionaries } from "../components/BeatBrowser";
-import { ErrorState, LoadingState, NotFoundPage, PageTitle } from "../components/ui";
+import { ErrorState, LoadingState, NotFoundPage, PageTitle, Spinner } from "../components/ui";
 import { formatRub } from "../lib/catalog";
+import { errorText } from "../lib/errors";
+import { usePay } from "../lib/payment";
 import { formatMoscowDateTime } from "../lib/validation";
 import { Totals } from "./CartPage";
 
@@ -91,14 +93,10 @@ export function OrderPage() {
         </ul>
         <aside className="card h-fit space-y-3">
           <Totals cart={o} />
-          {o.status === "pending" && (
-            <>
-              {o.requires_signature && !o.signed && <p className="text-sm text-orange">{t("order.signatureNeeded")}</p>}
-              <button type="button" className="btn-primary w-full" disabled>
-                {t("order.pay")}
-              </button>
-              <p className="text-xs text-muted">{t("order.paySoon")}</p>
-            </>
+          {o.status === "pending" && <PayPanel order={o} />}
+          {o.status === "paid" && <p className="text-sm text-cyan">{t("payment.paidText")}</p>}
+          {o.status === "canceled" && o.cancel_reason && (
+            <p className="text-sm text-danger">{t(`payment.cancelReason.${o.cancel_reason}`, { defaultValue: t("payment.cancelReason.other") })}</p>
           )}
           {o.status === "expired" && (
             <p className="text-sm text-soft">
@@ -110,6 +108,37 @@ export function OrderPage() {
           )}
         </aside>
       </div>
+    </div>
+  );
+}
+
+/** FR-20 … FR-25: pay, or pay again after a bank decline. Server errors become plain texts:
+ *  410 the reservation is over, 428 sign first, 503 the payment service is down (FR-21). */
+export function PayPanel({ order }: { order: Order }) {
+  const { t } = useTranslation();
+  const pay = usePay(order.order_id);
+  const needsSignature = order.requires_signature && !order.signed;
+  const declined = order.payment_status === "canceled";
+  const holding = order.payment_status === "waiting_for_capture";
+
+  return (
+    <div className="space-y-2">
+      {declined && (
+        <p className="alert-error">
+          {t("payment.declined")}
+          {order.payment_cancel_reason && ` ${t(`payment.bankReason.${order.payment_cancel_reason}`, { defaultValue: "" })}`}
+        </p>
+      )}
+      {needsSignature && <p className="text-sm text-orange">{t("order.signatureNeeded")}</p>}
+      {holding ? (
+        <p className="text-sm text-soft">{t("payment.processing")}</p>
+      ) : (
+        <button type="button" className="btn-primary w-full" disabled={needsSignature || pay.isPending} onClick={() => pay.mutate()}>
+          {pay.isPending && <Spinner />}
+          {declined ? t("payment.payAgain") : t("order.pay")}
+        </button>
+      )}
+      {pay.isError && <p className="alert-error">{errorText(pay.error)}</p>}
     </div>
   );
 }

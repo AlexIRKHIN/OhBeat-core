@@ -3,6 +3,8 @@
 Request path: uvicorn -> middleware (language) -> router of a module -> service -> database.
 """
 
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -17,6 +19,9 @@ from app.dictionaries.router import router as dictionaries_router
 from app.orders.router import router as orders_router
 from app.payments.router import router as payments_router
 from app.users.router import router as users_router
+
+# Messages of the modules (payments, notifications mock) next to the uvicorn ones: docker compose logs api
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 app = FastAPI(
     title="OhBeat Core API",

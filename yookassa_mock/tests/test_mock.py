@@ -103,6 +103,7 @@ def test_bank_decline_and_cancel_after_hold(client, sent):
     client.post(f"/checkout/{declined['id']}", data={"outcome": "decline"})
     got = client.get(f"/v3/payments/{declined['id']}", headers=headers()).json()
     assert (got["status"], got["cancellation_details"]["reason"]) == ("canceled", "insufficient_funds")
+    assert {t["status"] for t in got["transfers"]} == {"canceled"}
 
     held = client.post("/v3/payments", json=payment_body(), headers=headers()).json()
     client.post(f"/checkout/{held['id']}", data={"outcome": "success"})

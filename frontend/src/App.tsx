@@ -13,6 +13,7 @@ import { LegalPage } from "./pages/LegalPage";
 import { LoginPage } from "./pages/LoginPage";
 import { MyBeatsPage } from "./pages/MyBeatsPage";
 import { OrderPage } from "./pages/OrderPage";
+import { PaymentReturnPage } from "./pages/PaymentReturnPage";
 import { ProducerConnectPage } from "./pages/ProducerConnectPage";
 import { ProducerPage } from "./pages/ProducerPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -44,6 +45,7 @@ export function App() {
         <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
         <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
         <Route path="/orders/:id" element={<RequireAuth><OrderPage /></RequireAuth>} />
+        <Route path="/orders/:id/return" element={<RequireAuth><PaymentReturnPage /></RequireAuth>} />
         <Route path="/producer/connect" element={<RequireAuth><ProducerConnectPage /></RequireAuth>} />
         <Route path="/producer/beats" element={<RequireAuth role="producer"><MyBeatsPage /></RequireAuth>} />
         <Route path="/producer/beats/new" element={<RequireAuth role="producer"><UploadBeatPage /></RequireAuth>} />

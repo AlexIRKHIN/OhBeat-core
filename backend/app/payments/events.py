@@ -72,7 +72,7 @@ def process(db: Session, gateway: PaymentGateway, provider_payment_id: str) -> F
     if status not in ("waiting_for_capture", "succeeded", "canceled"):
         return Followups()  # still pending: nothing happened yet
 
-    # FR-22: one processing per (payment, event). ASSUMPTION: GAP-38 — the event is named by the actual
+    # FR-22: one processing per (payment, event). ASSUMPTION: GAP-67 — the event is named by the actual
     # status, so a late "waiting_for_capture" arriving after "succeeded" is a duplicate of nothing new.
     event = f"payment.{status}"
     inserted = db.execute(
@@ -107,7 +107,7 @@ def _on_hold(db: Session, payment: Payment, order: Order, actual: dict) -> Follo
     payment.status = "waiting_for_capture"
     reason = None
     if not _amount_matches(payment, order, actual):
-        reason = "AMOUNT_MISMATCH"  # ASSUMPTION: GAP-38
+        reason = "AMOUNT_MISMATCH"  # ASSUMPTION: GAP-38, GAP-67 — the order is canceled too
     elif order.status in ("pending", "expired"):
         reason = _sell(db, order)  # FR-24: an expired order may still be paid if the check passes
     # order paid by another payment or already canceled: this payment is simply released
@@ -172,7 +172,7 @@ def decision(db: Session, payment: Payment, order: Order, actual: dict) -> str:
     """Capture or cancel, from the data alone (GAP-35): the same answer at any later moment."""
     if not _amount_matches(payment, order, actual) or order.status == "canceled":
         return "cancel"
-    if order.status == "paid":
+    if order.status == "paid":  # ASSUMPTION: GAP-68 — a second hold of a paid order is released
         other_paid = db.scalar(select(func.count()).select_from(Payment).where(
             Payment.order_id == order.id, Payment.status == "succeeded", Payment.id != payment.id))
         return "cancel" if other_paid else "capture"

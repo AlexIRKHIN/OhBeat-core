@@ -113,6 +113,8 @@ def buyer_paid(payment_id: str, outcome: str) -> dict:
             return payment
         if outcome == "decline":
             payment.update(status="canceled", cancellation_details=_cancel_details("payment_network", "insufficient_funds"))
+            for transfer in payment["transfers"]:
+                transfer["status"] = "canceled"
             event = "payment.canceled"
         elif payment.get("capture"):
             payment.update(status="succeeded", paid=True, captured_at=store.now_iso())

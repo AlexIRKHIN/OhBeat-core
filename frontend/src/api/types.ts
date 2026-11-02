@@ -168,5 +168,7 @@ export interface Order {
   requires_signature: boolean;
   signed: boolean;
   reserved_until: string | null;
-  payment_status: string | null;
+  payment_status: "pending" | "waiting_for_capture" | "succeeded" | "canceled" | null;
+  payment_cancel_reason: string | null; // insufficient_funds, … (FR-25)
+  cancel_reason: string | null; // BEAT_SOLD, BEAT_RESERVED, … (FR-23)
 }
