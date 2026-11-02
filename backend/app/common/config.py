@@ -51,6 +51,16 @@ class Settings(BaseSettings):
     download_link_ttl_seconds: int = 3600  # NFR-8: not more than 1 hour
     frontend_url: str = "http://localhost:5173"  # ASSUMPTION: GAP-65 — where links in emails and return_url point
 
+    # YooKassa (locally the mock). FR-21, ASSUMPTION: GAP-62 — 1 attempt + 3 retries with these pauses, seconds
+    yookassa_api_url: str = "http://yookassa-mock:8100/v3"
+    yookassa_shop_id: str = ""
+    yookassa_secret_key: str = ""
+    yookassa_timeout_seconds: float = 5.0
+    yookassa_retry_pauses: str = "0.5,1,2"
+    yookassa_ip_check: bool = False  # FR-22; off locally: the mock calls from the docker network
+    # GAP-35: a held payment not settled this long after its webhook is settled by the scheduler
+    payment_settle_after_seconds: int = 60
+
     cors_origins: list[str] = ["http://localhost:5173"]
 
 

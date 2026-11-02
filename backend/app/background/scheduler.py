@@ -1,7 +1,8 @@
 """Scheduler: periodic system jobs (System_Architecture.md §3).
 
 - FR-8: beats stuck in `uploading` for more than 24 hours become `deleted`;
-- FR-29: expired Exclusive reservations are released, unpaid orders expire.
+- FR-29: expired Exclusive reservations are released, unpaid orders expire;
+- GAP-35: payments left in the hold after a crash are captured or canceled.
 
 Every job is a single idempotent UPDATE, so running two schedulers at once is harmless.
 
@@ -14,6 +15,7 @@ import time
 from app.catalog.service import delete_abandoned_uploads
 from app.common.db import get_session_factory
 from app.orders.expiry import expire_reservations
+from app.payments.events import settle_stuck_payments
 
 log = logging.getLogger("scheduler")
 
@@ -22,6 +24,7 @@ INTERVAL_SECONDS = 60  # "once a minute"
 JOBS = [
     ("FR-8 abandoned uploads", delete_abandoned_uploads),
     ("FR-29 expired reservations and orders", expire_reservations),
+    ("GAP-35 payments stuck in the hold", settle_stuck_payments),
 ]
 
 

@@ -105,3 +105,5 @@ class OrderOut(Money):
     signed: bool
     reserved_until: datetime | None
     payment_status: str | None
+    payment_cancel_reason: str | None = None  # e.g. insufficient_funds — the bank declined (FR-25)
+    cancel_reason: str | None = None  # why the order was canceled at the FR-23 check (BEAT_SOLD, …)

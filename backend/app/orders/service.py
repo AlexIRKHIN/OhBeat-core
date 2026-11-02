@@ -20,7 +20,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.catalog.models import Beat, BeatFile, BeatPrice
-from app.common.audit import write_audit
+from app.common.audit import AuditLog, write_audit
 from app.common.config import get_settings
 from app.common.errors import ApiError
 from app.common.i18n import t
@@ -28,7 +28,7 @@ from app.common.storage import ObjectStorage
 from app.contracts.draft import DraftItem, license_files, render_draft, sha256_text
 from app.dictionaries.models import License
 from app.orders.cart import unavailable_reason
-from app.orders.models import Contract, Order, OrderItem, Payment
+from app.orders.models import Contract, Order, OrderItem, Payment, PaymentEvent
 from app.orders.money import service_fee
 from app.orders.schemas import OrderCreate, OrderCreated, OrderItemOut, OrderOut
 from app.users.models import BillingProfile, ProducerAccount, Profile
@@ -238,7 +238,17 @@ def get_order(db: Session, storage: ObjectStorage, order_id: int, user_id: int) 
         ))
     exclusive_items = [r.OrderItem.id for r in rows if r.License.is_exclusive]
     reserved_until = db.scalar(select(func.min(Beat.reserved_until)).where(Beat.reserved_order_id == order.id))
-    last_payment = db.scalar(select(Payment.status).where(Payment.order_id == order.id).order_by(Payment.id.desc()))
+    last_payment = db.scalar(select(Payment).where(Payment.order_id == order.id).order_by(Payment.id.desc()))
+    payment_cancel_reason = None
+    if last_payment and last_payment.status == "canceled":
+        payload = db.scalar(select(PaymentEvent.payload).where(
+            PaymentEvent.provider_payment_id == last_payment.provider_payment_id, PaymentEvent.event == "payment.canceled"))
+        payment_cancel_reason = ((payload or {}).get("cancellation_details") or {}).get("reason")
+    cancel_reason = None
+    if order.status == "canceled":
+        cancel_reason = db.scalar(select(AuditLog.details["reason"].astext).where(
+            AuditLog.entity == "order", AuditLog.entity_id == order.id, AuditLog.action == "order.canceled"
+        ).order_by(AuditLog.id.desc()).limit(1))
     return OrderOut(
         order_id=order.id,
         status=order.status,
@@ -250,5 +260,7 @@ def get_order(db: Session, storage: ObjectStorage, order_id: int, user_id: int) 
         requires_signature=bool(exclusive_items),
         signed=all(i in otp_signed for i in exclusive_items),
         reserved_until=reserved_until,
-        payment_status=last_payment,
+        payment_status=last_payment.status if last_payment else None,
+        payment_cancel_reason=payment_cancel_reason,
+        cancel_reason=cancel_reason,
     )
