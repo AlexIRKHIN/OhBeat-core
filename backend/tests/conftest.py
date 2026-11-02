@@ -19,9 +19,15 @@ os.environ["DATABASE_URL"] = TEST_APP_URL.render_as_string(hide_password=False)
 # Inside docker the browser address localhost:9000 is unreachable; tests upload through the internal one
 os.environ["S3_PUBLIC_ENDPOINT"] = os.environ.get("S3_INTERNAL_ENDPOINT", "http://minio:9000")
 
+# Own buckets: ids restart from 1 in every test, so shared buckets would mix objects of different beats
+TEST_BUCKETS = {"BUCKET_TEMP": "test-temp-uploads", "BUCKET_PRIVATE": "test-private-media", "BUCKET_PUBLIC": "test-public-media"}
+os.environ.update(TEST_BUCKETS)
+
 # A separate RabbitMQ virtual host: tests never touch the queues of the running environment
 RABBIT_URL = make_url(os.environ["RABBITMQ_URL"].replace("amqp://", "postgresql://", 1))  # reuse the URL parser
 TEST_VHOST = "ohbeat_test"
+# Retries after 0.2 s instead of 30 s / 2 min / 10 min, so tests can watch the whole path to the DLQ
+os.environ["RABBIT_RETRY_DELAYS_MS"] = "200,200,200"
 os.environ["RABBITMQ_URL"] = (
     f"amqp://{RABBIT_URL.username}:{RABBIT_URL.password}@{RABBIT_URL.host}:{RABBIT_URL.port or 5672}/{TEST_VHOST}"
 )
@@ -63,6 +69,37 @@ def owner_engine():
     engine.dispose()
 
 
+@pytest.fixture(scope="session")
+def test_buckets():
+    """Creates the test buckets; the public one is readable anonymously, like public-media."""
+    import json
+
+    from app.common.config import get_settings
+    from app.common.storage import _client
+
+    s3 = _client(get_settings().s3_internal_endpoint)
+    for bucket in TEST_BUCKETS.values():
+        try:
+            s3.head_bucket(Bucket=bucket)
+        except Exception:
+            s3.create_bucket(Bucket=bucket)
+    s3.put_bucket_policy(Bucket=TEST_BUCKETS["BUCKET_PUBLIC"], Policy=json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [{"Effect": "Allow", "Principal": {"AWS": ["*"]}, "Action": ["s3:GetObject"],
+                       "Resource": [f"arn:aws:s3:::{TEST_BUCKETS['BUCKET_PUBLIC']}/*"]}],
+    }))
+    return s3
+
+
+@pytest.fixture(autouse=True)
+def clean_buckets(test_buckets):
+    for bucket in TEST_BUCKETS.values():
+        for page in test_buckets.get_paginator("list_objects_v2").paginate(Bucket=bucket):
+            for obj in page.get("Contents", []):
+                test_buckets.delete_object(Bucket=bucket, Key=obj["Key"])
+    yield
+
+
 @pytest.fixture(autouse=True)
 def clean_tables(owner_engine):
     """Every test starts with no users. TRUNCATE ... CASCADE also empties every table
@@ -90,9 +127,11 @@ def app_engine(owner_engine):
 
 @pytest.fixture(scope="session")
 def rabbit_vhost():
-    """Creates the test virtual host through the RabbitMQ management API (idempotent)."""
+    """Recreates the test virtual host through the RabbitMQ management API: queues from a previous
+    run (maybe with other delays) are dropped together with it."""
     auth = (RABBIT_URL.username, RABBIT_URL.password)
     base = os.environ.get("RABBITMQ_MANAGEMENT_URL", "http://rabbitmq:15672")
+    httpx.delete(f"{base}/api/vhosts/{TEST_VHOST}", auth=auth)
     httpx.put(f"{base}/api/vhosts/{TEST_VHOST}", auth=auth).raise_for_status()
     httpx.put(
         f"{base}/api/permissions/{TEST_VHOST}/{RABBIT_URL.username}",

@@ -54,7 +54,7 @@ def test_nfr22_avatar_uploaded_checked_and_published(client):
     response = client.put("/v1/users/me", json={"display_name": "Ivan", "avatar_key": key}, headers=auth(tokens))
     assert response.status_code == 200, response.text
     avatar_url = response.json()["avatar_url"]
-    assert "/public-media/avatars/" in avatar_url
+    assert "/test-public-media/avatars/" in avatar_url
     # The public bucket is readable without a signature
     assert httpx.get(avatar_url).status_code == 200
 
