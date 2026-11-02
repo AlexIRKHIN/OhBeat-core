@@ -14,6 +14,7 @@ x-backend: &backend
     S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/%2F
     RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
+    YOOKASSA_API_URL: http://yookassa-mock:8100/v3
   volumes:
     - ./backend:/app
     # Documentation repository, read-only: tests compare the migration with schema.sql
@@ -164,6 +165,28 @@ services:
       storage-init:
         condition: service_completed_successfully
 
+  # YooKassa mock (slice 3): API v3, the payment page and the control panel at http://localhost:8100/admin
+  yookassa-mock:
+    build: ./yookassa_mock
+    image: ohbeat/yookassa-mock:dev
+    environment:
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
+      MOCK_PUBLIC_URL: http://localhost:8100
+      MOCK_WEBHOOK_URL: http://api:8000/v1/payments/webhook
+      MOCK_DB_PATH: /data/yookassa.sqlite3
+    volumes:
+      - ./yookassa_mock:/app
+      - yookassa-data:/data
+    ports:
+      - "8100:8100"
+    command: ["uvicorn", "mock.main:app", "--host", "0.0.0.0", "--port", "8100", "--reload"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8100/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
   frontend:
     image: node:20-alpine
     working_dir: /app
@@ -182,6 +205,7 @@ services:
         condition: service_healthy
 
 volumes:
+  yookassa-data:
   pgdata:
   rabbitmqdata:
   miniodata:
