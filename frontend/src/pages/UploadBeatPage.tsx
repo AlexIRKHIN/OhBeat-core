@@ -287,6 +287,25 @@ function UploadForm({ dictionaries, source }: { dictionaries: Dictionaries; sour
   const bpmField = register("bpm");
   const canSubmit = isValid && filesReady && phase === "edit";
 
+  // NFR-11: say what blocks the button, instead of a silently disabled one
+  const values = watch();
+  const fieldNames: Record<string, string> = {
+    title: t("upload.titleLabel"),
+    bpm: t("upload.bpm"),
+    musical_key: t("upload.key"),
+    genres: t("upload.genres"),
+    description: t("upload.description"),
+    licenses: t("upload.licenses"),
+  };
+  const missing: string[] = [];
+  if (!files.cover || fileErrors.cover) missing.push(t("upload.cover"));
+  if (!files.wav || fileErrors.wav) missing.push(t("upload.wav"));
+  if ((stemsNeeded && !files.stems) || fileErrors.stems) missing.push(`${t("upload.stems")} (${t("upload.stemsRequired").toLowerCase()})`);
+  const parsed = schema.safeParse(values);
+  if (!parsed.success) {
+    for (const name of new Set(parsed.error.issues.map((i) => String(i.path[0])))) missing.push(fieldNames[name] ?? name);
+  }
+
   const toggleGenre = useCallback(
     (name: string, selected: string[]) =>
       setValue("genres", selected.includes(name) ? selected.filter((g) => g !== name) : [...selected, name], {
@@ -480,6 +499,11 @@ function UploadForm({ dictionaries, source }: { dictionaries: Dictionaries; sour
               {phase !== "edit" && <Spinner />}
               {phase === "creating" ? t("upload.sending") : phase === "uploading" ? t("upload.uploadingFiles") : phase === "confirming" ? t("upload.confirming") : t("upload.submit")}
             </button>
+          )}
+          {phase === "edit" && missing.length > 0 && (
+            <p className="text-sm text-orange" role="status">
+              {t("upload.missing")}: {missing.join(", ")}
+            </p>
           )}
         </div>
       </form>
