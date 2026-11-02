@@ -83,9 +83,9 @@ OhBeat — маркетплейс битов. Продюсер подключа�
 
 | | |
 | --- | --- |
-| FR | FR-1 … FR-13, FR-34 |
+| FR | FR-1 … FR-13, FR-34 (без публичной страницы и статистики — предложено перенести в срезы 2 и 3, ждёт решения аналитика) |
 | NFR | NFR-3, NFR-10, NFR-11, NFR-17, NFR-19, NFR-20, NFR-22 |
-| Эндпоинты | `POST /beats`, `POST /beats/{id}/uploads`, `POST /beats/{id}/confirm`, `GET /beats/{id}` (владельцу), `PUT /beats/{id}/licenses/{code}`, `PATCH /beats/{id}`, `DELETE /beats/{id}`, `GET /users/me/beats`, `GET /users/me/sales`, `GET /producers/{id}` |
+| Эндпоинты | `POST /beats`, `POST /beats/{id}/uploads`, `POST /beats/{id}/confirm`, `GET /beats/{id}` (владельцу), `PUT /beats/{id}/licenses/{code}`, `PATCH /beats/{id}`, `DELETE /beats/{id}`, `GET /users/me/beats`. Подробный план — [slice-1-plan.md](slices/slice-1-plan.md) |
 | Очереди | exchange `media.events`; `beat_processing_queue`, `beat_results_queue`; три очереди задержки; `beat_processing_dlq`, `beat_results_dlq` (GAP-20) |
 | Таблицы | `beats`, `beat_files`, `beat_genres`, `beat_prices`, `genres`, `licenses`, `stop_words`, `outbox`, `audit_log` |
 | Фон | outbox relay (раз в секунду), потребитель результатов, планировщик FR-8 (`uploading` дольше 24 ч → `deleted`) |
@@ -108,7 +108,7 @@ OhBeat — маркетплейс битов. Продюсер подключа�
 
 | | |
 | --- | --- |
-| FR / US | FR-19 (метка), US-A1, US-A2, UC-1…UC-3 |
+| FR / US | FR-19 (метка), US-A1, US-A2, UC-1…UC-3; FR-34 — публичная страница продюсера `GET /producers/{id}` (если перенос одобрен) |
 | NFR | NFR-1, NFR-9, NFR-21, NFR-27, NFR-28; `RFC_Audio_Streaming.md` |
 | Эндпоинты | `GET /beats`, `GET /beats/{id}` |
 | Таблицы | `beats`, `beat_prices`, `beat_genres`, `genres`, `profiles`, `beat_files` |
@@ -133,7 +133,7 @@ URL превью и обложек строятся с адресом MinIO, д�
 | --- | --- |
 | FR | FR-14 … FR-30 (кроме OTP-части FR-16 — она в срезе 4) |
 | NFR | NFR-7, NFR-8, NFR-25, NFR-27, NFR-29 |
-| Эндпоинты | `GET /cart`, `PUT/DELETE /cart/items/{beat_id}`, `POST /orders`, `GET /orders/{id}`, `POST /orders/{id}/payments`, `POST /payments/webhook`, `GET /orders/{id}/downloads`, `GET /users/me/purchases` |
+| Эндпоинты | `GET /cart`, `PUT/DELETE /cart/items/{beat_id}`, `POST /orders`, `GET /orders/{id}`, `POST /orders/{id}/payments`, `POST /payments/webhook`, `GET /orders/{id}/downloads`, `GET /users/me/purchases`; `GET /users/me/sales` — статистика продаж FR-34 (если перенос одобрен) |
 | Таблицы | `cart_items`, `orders`, `order_items`, `payments`, `payment_events`, `contracts`, `beats`, `audit_log` |
 
 **Путь (по `sequence_exclusive_purchase.png`):** `POST /orders` → одна транзакция: `orders` + `order_items` + `UPDATE beats … WHERE status = 'active'` → `POST /payments` → ЮKassa (мок) → редирект на страницу оплаты мока → вебхук `waiting_for_capture` → сверка → транзакция: `payment_events` + `beats.status = sold` → `capture` → вебхук `succeeded` → `orders.status = paid` + PDF + `audit_log` → опрос `GET /orders/{id}` → ссылки.
