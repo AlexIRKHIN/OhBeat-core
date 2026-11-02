@@ -28,9 +28,11 @@ export function hasFilters(filters: CatalogFilters): boolean {
   return KEYS.some((k) => filters[k].trim() !== "");
 }
 
-/** NFR-27: amounts in rubles with the ₽ sign, "1 500 ₽". */
+/** NFR-27: amounts in rubles with the ₽ sign, "1 500 ₽"; kopecks only when there are any, "1 099,95 ₽". */
 export function formatRub(amount: number): string {
-  return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(amount)} ₽`;
+  const kopecks = Math.round(amount * 100) % 100 !== 0;
+  const digits = kopecks ? 2 : 0;
+  return `${new Intl.NumberFormat("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(amount)} ₽`;
 }
 
 /** The lowest active price: what the card shows as "from …" (REST API §2.3 price_max uses it too). */

@@ -22,6 +22,12 @@ describe("NFR-27 prices", () => {
     expect(formatRub(500000).replace(/\s/g, " ")).toBe("500 000 ₽");
   });
 
+  it("shows kopecks only when there are any (fee on top, FR-30)", () => {
+    expect(formatRub(1099.95).replace(/\s/g, " ")).toBe("1 099,95 ₽");
+    expect(formatRub(450.5).replace(/\s/g, " ")).toBe("450,50 ₽");
+    expect(formatRub(4950).replace(/\s/g, " ")).toBe("4 950 ₽");
+  });
+
   it("the card price is the lowest active one", () => {
     const beat = {
       licenses: [

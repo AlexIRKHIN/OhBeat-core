@@ -106,3 +106,67 @@ export interface UploadsReissued {
   upload_expires_at: string;
   uploads: Partial<Record<FileField, PresignedForm>>;
 }
+
+// --- Cart and orders (REST API §2.5, §2.6, §2.11) ---
+
+// IN_YOUR_ORDER: reserved by a pending order of this Artist (GAP-66)
+export type UnavailableReason = "BEAT_RESERVED" | "BEAT_SOLD" | "BEAT_NOT_AVAILABLE" | "LICENSE_INACTIVE" | "OWN_BEAT" | "IN_YOUR_ORDER";
+
+export interface CartItem {
+  beat_id: number;
+  title: string;
+  producer: string;
+  cover_url: string | null;
+  license: LicenseCode;
+  price: number;
+  service_fee: number;
+  available: boolean;
+  unavailable_reason: UnavailableReason | null;
+  order_id: number | null;
+}
+
+export interface Cart {
+  items: CartItem[];
+  items_total: number;
+  service_fee: number;
+  total: number;
+  fee_percent: number;
+}
+
+export interface OrderCreated {
+  order_id: number;
+  status: OrderStatus;
+  items_total: number;
+  service_fee: number;
+  total: number;
+  requires_signature: boolean;
+  reserved_until: string | null;
+}
+
+export type OrderStatus = "pending" | "paid" | "expired" | "canceled";
+
+export interface OrderItem {
+  item_id: number;
+  contract_number: string;
+  beat_id: number;
+  title: string;
+  cover_url: string | null;
+  producer: string;
+  license: LicenseCode;
+  price: number;
+  service_fee: number;
+}
+
+export interface Order {
+  order_id: number;
+  status: OrderStatus;
+  created_at: string;
+  items_total: number;
+  service_fee: number;
+  total: number;
+  items: OrderItem[];
+  requires_signature: boolean;
+  signed: boolean;
+  reserved_until: string | null;
+  payment_status: string | null;
+}

@@ -1,15 +1,21 @@
 // Beat page (REST API §2.10): cover, preview, description and licenses with prices
 // of the Producer (FR-15: the service fee is added later, in the cart).
-import { useQuery } from "@tanstack/react-query";
+// FR-14: the Artist picks exactly one license and puts it into the cart.
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ApiError, api } from "../api/client";
-import type { BeatCard } from "../api/types";
+import type { BeatCard, LicenseCode } from "../api/types";
+import { useAuth } from "../auth/AuthContext";
 import { toTrack, useDictionaries } from "../components/BeatBrowser";
-import { ErrorState, LoadingState, NotFoundPage } from "../components/ui";
+import { useToast } from "../components/Toasts";
+import { ErrorState, LoadingState, NotFoundPage, Spinner } from "../components/ui";
 import { formatDuration } from "../lib/beatFiles";
+import { useCart, usePutCartItem } from "../lib/cart";
 import { formatRub } from "../lib/catalog";
+import { errorText } from "../lib/errors";
 import { PlayButton } from "../player/Player";
 
 export function BeatPage() {
@@ -71,22 +77,114 @@ export function BeatPage() {
 
         {b.description && <p className="whitespace-pre-line text-soft">{b.description}</p>}
 
-        <section className="card space-y-2 p-0 sm:p-0">
-          <h2 className="px-4 pt-4 text-sm font-medium text-cyan">{t("beat.licenses")}</h2>
-          <ul className="divide-y divide-line">
-            {b.licenses.map((lic) => (
-              <li key={lic.code} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div>
-                  <p className="font-medium text-ink">{licenseInfo.get(lic.code)?.name ?? lic.code}</p>
-                  <p className="text-xs text-muted">{contents(lic.code)}</p>
-                </div>
-                <p className="shrink-0 text-lg text-cyan">{formatRub(lic.price)}</p>
-              </li>
-            ))}
-          </ul>
-          <p className="px-4 pb-4 text-xs text-muted">{t("beat.buySoon")}</p>
-        </section>
+        <LicensePicker beat={b} names={(code) => licenseInfo.get(code)?.name ?? code} contents={contents} />
       </div>
     </article>
+  );
+}
+
+/** FR-14, FR-19: one license per beat; the button is off for a reserved beat and for your own one (GAP-26). */
+function LicensePicker({ beat, names, contents }: { beat: BeatCard; names: (code: LicenseCode) => string; contents: (code: string) => string }) {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const cart = useCart(Boolean(user));
+  const put = usePutCartItem();
+
+  const active = beat.licenses.filter((l) => l.is_active);
+  const inCart = cart.data?.items.find((i) => i.beat_id === beat.id);
+  const [picked, setChoice] = useState<LicenseCode | null>(null);
+  // Until the Artist picks: the license already in the cart, otherwise the cheapest (the first one)
+  const choice = picked ?? inCart?.license ?? active[0]?.code ?? null;
+
+  const own = user?.id === beat.producer.id;
+  const yourOrder = inCart?.unavailable_reason === "IN_YOUR_ORDER" ? inCart.order_id : null;
+  const blocked = yourOrder
+    ? t("beat.blockedYourOrder")
+    : beat.is_reserved
+      ? t("beat.blockedReserved")
+      : own
+        ? t("beat.blockedOwn")
+        : null;
+  const sameAsCart = inCart?.license === choice;
+
+  const add = () => {
+    if (!user) {
+      navigate(`/login?next=${encodeURIComponent(location.pathname)}`);
+      return;
+    }
+    if (!choice) return;
+    put.mutate(
+      { beatId: beat.id, license: choice },
+      {
+        onSuccess: () => toast.show(inCart ? t("beat.licenseChanged") : t("beat.added"), "success"),
+        onError: (error) => {
+          toast.show(errorText(error), "error");
+          // The beat was reserved or sold meanwhile: show its real state
+          if (error instanceof ApiError && error.status === 409) void queryClient.invalidateQueries({ queryKey: ["beats", String(beat.id)] });
+        },
+      },
+    );
+  };
+
+  return (
+    <section className="card space-y-3 p-0 sm:p-0">
+      <h2 className="px-4 pt-4 text-sm font-medium text-cyan">{t("beat.licenses")}</h2>
+      <fieldset className="divide-y divide-line" disabled={Boolean(blocked)}>
+        <legend className="sr-only">{t("beat.chooseLicense")}</legend>
+        {active.map((lic) => (
+          <label
+            key={lic.code}
+            className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-3 ${choice === lic.code ? "bg-accent/10" : "hover:bg-panel-2"}`}
+          >
+            <span className="flex items-center gap-3">
+              <input
+                type="radio"
+                name="license"
+                value={lic.code}
+                checked={choice === lic.code}
+                onChange={() => setChoice(lic.code)}
+                className="accent-[#3b8fd0]"
+              />
+              <span>
+                <span className="block font-medium text-ink">
+                  {names(lic.code)}
+                  {inCart?.license === lic.code && <span className="ml-2 text-xs text-cyan">· {t("beat.inCart")}</span>}
+                </span>
+                <span className="block text-xs text-muted">{contents(lic.code)}</span>
+              </span>
+            </span>
+            <span className="shrink-0 text-lg text-cyan">{formatRub(lic.price)}</span>
+          </label>
+        ))}
+      </fieldset>
+      <div className="space-y-2 px-4 pb-4">
+        {blocked && (
+          <p className="text-sm text-orange">
+            {blocked}
+            {yourOrder && (
+              <Link to={`/orders/${yourOrder}`} className="link ml-2">
+                {t("cart.openOrder", { id: yourOrder })}
+              </Link>
+            )}
+          </p>
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="btn-primary" onClick={add} disabled={Boolean(blocked) || !choice || sameAsCart || put.isPending}>
+            {put.isPending && <Spinner />}
+            {inCart ? (sameAsCart ? t("beat.inCart") : t("beat.changeLicense")) : t("beat.addToCart")}
+          </button>
+          {inCart && (
+            <Link to="/cart" className="link text-sm">
+              {t("beat.goToCart")}
+            </Link>
+          )}
+        </div>
+        <p className="text-xs text-muted">{t("beat.feeNote")}</p>
+      </div>
+    </section>
   );
 }

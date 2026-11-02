@@ -32,7 +32,7 @@ const SERVER_FIELDS = [
 export const BILLING_QUERY = ["users", "me", "billing"] as const;
 
 /** null = the form has never been saved (the API answers 404). */
-async function loadBilling(): Promise<Billing | null> {
+export async function loadBilling(): Promise<Billing | null> {
   try {
     return await api<Billing>("/users/me/billing");
   } catch (error) {

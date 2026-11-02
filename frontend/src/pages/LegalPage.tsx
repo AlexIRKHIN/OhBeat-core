@@ -8,6 +8,7 @@ const TITLES: Record<string, string> = {
   privacy: "legal.privacy",
   pep: "legal.pep",
   "license-terms": "legal.licenseTerms",
+  offer: "legal.offer", // FR-16, ASSUMPTION: GAP-30 — the offer is a public page linked next to the checkbox
 };
 
 export function LegalPage() {

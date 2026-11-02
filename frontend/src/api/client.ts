@@ -9,6 +9,10 @@ import i18n from "../i18n";
 export interface ApiErrorDetail {
   field: string;
   issue: string;
+  // 409 PRICE_CHANGED / BEAT_RESERVED of POST /orders name the beat and the new price
+  beat_id?: number;
+  license?: string;
+  price?: number;
 }
 
 export class ApiError extends Error {

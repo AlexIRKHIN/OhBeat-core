@@ -6,6 +6,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import { setLanguage } from "../i18n";
+import { useCart } from "../lib/cart";
 
 function LanguageSwitch() {
   const { i18n } = useTranslation();
@@ -23,6 +24,19 @@ function LanguageSwitch() {
         </button>
       ))}
     </div>
+  );
+}
+
+/** FR-15: the cart is always one click away; the number is how many beats are in it. */
+function CartLink({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
+  const cart = useCart();
+  const count = cart.data?.items.length ?? 0;
+  return (
+    <NavLink to="/cart" className={navClass} onClick={onClick} aria-label={t("nav.cartCount", { count })}>
+      {t("nav.cart")}
+      {count > 0 && <span className="ml-1.5 rounded-full bg-accent-deep px-1.5 py-0.5 text-xs text-white">{count}</span>}
+    </NavLink>
   );
 }
 
@@ -44,6 +58,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const links = user ? (
     <>
+      <CartLink onClick={close} />
       <NavLink to="/profile" className={navClass} onClick={close}>
         {t("nav.profile")}
       </NavLink>
