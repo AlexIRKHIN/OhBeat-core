@@ -26,6 +26,7 @@ class StorageUnavailable(Exception):
 class ObjectInfo:
     size_bytes: int
     content_type: str | None
+    sha256: str | None = None  # user metadata x-amz-meta-sha256 written by Media Worker (GAP-50)
 
 
 @dataclass(frozen=True)
@@ -89,7 +90,11 @@ class S3Storage:
             raise StorageUnavailable from exc
         except BotoCoreError as exc:
             raise StorageUnavailable from exc
-        return ObjectInfo(size_bytes=meta["ContentLength"], content_type=meta.get("ContentType"))
+        return ObjectInfo(
+            size_bytes=meta["ContentLength"],
+            content_type=meta.get("ContentType"),
+            sha256=(meta.get("Metadata") or {}).get("sha256"),
+        )
 
     def read(self, bucket: str, key: str, max_bytes: int) -> bytes:
         try:

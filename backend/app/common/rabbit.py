@@ -26,8 +26,19 @@ PROCESSED_KEY = "beat.media.processed"
 PROCESSING_QUEUE = "beat_processing_queue"
 RESULTS_QUEUE = "beat_results_queue"
 
-# Delay before the 1st, 2nd and 3rd retry (RabbitMQ_Worker.md §5)
-RETRY_DELAYS = (("30s", 30_000), ("2m", 120_000), ("10m", 600_000))
+MAX_RETRIES = 3  # "no more than 3 retries after the first attempt"
+
+
+def retry_delays() -> tuple[tuple[str, int], ...]:
+    """Delay before the 1st, 2nd and 3rd retry (RabbitMQ_Worker.md §5)."""
+    values = [int(v) for v in get_settings().rabbit_retry_delays_ms.split(",")]
+    return tuple(zip(("30s", "2m", "10m"), values))
+
+
+def retries_so_far(properties: pika.BasicProperties) -> int:
+    """How many times a message already expired in the delay queues (header x-death)."""
+    deaths = (properties.headers or {}).get("x-death") or []
+    return sum(int(d.get("count", 0)) for d in deaths if d.get("reason") == "expired")
 
 
 def connect() -> pika.BlockingConnection:
@@ -63,8 +74,9 @@ def _declare_flow(channel: BlockingChannel, queue: str, routing_key: str, retry_
     channel.queue_bind(queue=dlq, exchange=DLX_EXCHANGE, routing_key=dlq)
 
 
-def declare_topology(channel: BlockingChannel, retry_delays: tuple = RETRY_DELAYS) -> None:
+def declare_topology(channel: BlockingChannel) -> None:
+    delays = retry_delays()
     for name in (EXCHANGE, RETRY_EXCHANGE, DLX_EXCHANGE):
         channel.exchange_declare(exchange=name, exchange_type="direct", durable=True)
-    _declare_flow(channel, PROCESSING_QUEUE, PROCESS_KEY, retry_delays)
-    _declare_flow(channel, RESULTS_QUEUE, PROCESSED_KEY, retry_delays)
+    _declare_flow(channel, PROCESSING_QUEUE, PROCESS_KEY, delays)
+    _declare_flow(channel, RESULTS_QUEUE, PROCESSED_KEY, delays)

@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     rabbitmq_url: str = "amqp://guest:guest@rabbitmq:5672/%2F"
     relay_interval_seconds: float = 1.0  # RabbitMQ_Worker.md §2: once a second
     relay_batch_size: int = 100
+    # Delay before the 1st, 2nd and 3rd retry, ms (RabbitMQ_Worker.md §5). Tests shorten them.
+    rabbit_retry_delays_ms: str = "30000,120000,600000"
 
     # FR-8: beats left in `uploading` are deleted after this many hours
     upload_ttl_hours: int = 24
