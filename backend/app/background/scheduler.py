@@ -1,7 +1,7 @@
 """Scheduler: periodic system jobs (System_Architecture.md §3).
 
-Now: FR-8 — beats stuck in `uploading` for more than 24 hours become `deleted`.
-Slice 3 adds FR-29 (expired reservations and unpaid orders).
+- FR-8: beats stuck in `uploading` for more than 24 hours become `deleted`;
+- FR-29: expired Exclusive reservations are released, unpaid orders expire.
 
 Every job is a single idempotent UPDATE, so running two schedulers at once is harmless.
 
@@ -13,6 +13,7 @@ import time
 
 from app.catalog.service import delete_abandoned_uploads
 from app.common.db import get_session_factory
+from app.orders.expiry import expire_reservations
 
 log = logging.getLogger("scheduler")
 
@@ -20,6 +21,7 @@ INTERVAL_SECONDS = 60  # "once a minute"
 
 JOBS = [
     ("FR-8 abandoned uploads", delete_abandoned_uploads),
+    ("FR-29 expired reservations and orders", expire_reservations),
 ]
 
 

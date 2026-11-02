@@ -30,6 +30,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "BEAT_RESERVED": "Этот эксклюзив прямо сейчас оформляет другой покупатель",
         "LAST_ACTIVE_LICENSE": "У бита должна остаться хотя бы одна активная лицензия",
         "STEMS_REQUIRED": "Лицензии Trackout и Exclusive требуют ZIP со стемами",
+        "BEAT_NOT_AVAILABLE": "Бит снят с продажи",
+        "LICENSE_INACTIVE": "Эта лицензия отключена Продюсером",
+        "OWN_BEAT": "Нельзя купить собственный бит",
+        "PRICE_CHANGED": "Цена изменилась, подтвердите новую сумму",
         # Field issues (details[].issue)
         "required": "Обязательное поле",
         "invalid_value": "Недопустимое значение",
@@ -57,6 +61,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "file_extension_not_allowed": "Недопустимое расширение файла",
         "file_type_not_allowed_for": "Недопустимый тип файла",
         "file_not_declared": "Этот файл не заявлен при создании бита",
+        "price_changed_to": "Новая цена: {price} ₽",
+        "phone_required_for_exclusive": "Для Exclusive нужен телефон: на него придёт код подписи",
     },
     "en": {
         "VALIDATION_ERROR": "Invalid request data",
@@ -78,6 +84,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "BEAT_RESERVED": "Another buyer is checking out this exclusive right now",
         "LAST_ACTIVE_LICENSE": "A beat must keep at least one active license",
         "STEMS_REQUIRED": "Trackout and Exclusive licenses require a ZIP with stems",
+        "BEAT_NOT_AVAILABLE": "The beat is no longer for sale",
+        "LICENSE_INACTIVE": "This license is turned off by the Producer",
+        "OWN_BEAT": "You cannot buy your own beat",
+        "PRICE_CHANGED": "The price has changed, confirm the new total",
         "required": "Required field",
         "invalid_value": "Invalid value",
         "invalid_type": "Invalid value type",
@@ -104,6 +114,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "file_extension_not_allowed": "File extension is not allowed",
         "file_type_not_allowed_for": "File type is not allowed",
         "file_not_declared": "This file was not declared when the beat was created",
+        "price_changed_to": "New price: {price} RUB",
+        "phone_required_for_exclusive": "Exclusive needs a phone: the signature code is sent to it",
     },
 }
 

@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     # FR-8: beats left in `uploading` are deleted after this many hours
     upload_ttl_hours: int = 24
 
+    # Purchases (FR-18, FR-28, FR-29). Shorter values are handy for a demo, the documented ones are defaults.
+    reservation_ttl_minutes: int = 15  # FR-18: the Exclusive reservation
+    unpaid_order_ttl_hours: int = 24  # FR-29: orders without Exclusive
+    download_link_ttl_seconds: int = 3600  # NFR-8: not more than 1 hour
+    frontend_url: str = "http://localhost:5173"  # ASSUMPTION: GAP-65 — where links in emails and return_url point
+
     cors_origins: list[str] = ["http://localhost:5173"]
 
 

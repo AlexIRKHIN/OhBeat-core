@@ -1,0 +1,24 @@
+ЛИЦЕНЗИОННЫЙ ДОГОВОР № {{ number }}
+на использование музыкального произведения (бита)
+
+ВНИМАНИЕ: типовой текст-заглушка, требует юридической проверки (GAP-31).
+
+1. СТОРОНЫ
+Лицензиар: {{ licensor.name }}{% if licensor.company %}, {{ licensor.company }}{% endif %}{% if licensor.inn %}, ИНН {{ licensor.inn }}{% endif %}{% if licensor.address %}, адрес: {{ licensor.address }}{% endif %}.
+Псевдоним на платформе OhBeat: {{ licensor.display_name }} (ID {{ licensor.id }}).
+Лицензиат: {{ licensee.name }}{% if licensee.company %}, {{ licensee.company }}{% endif %}{% if licensee.inn %}, ИНН {{ licensee.inn }}{% endif %}{% if licensee.address %}, адрес: {{ licensee.address }}{% endif %}.
+Email Лицензиата: {{ licensee.email }}{% if licensee.phone %}, телефон: {{ licensee.phone }}{% endif %}.
+
+2. ПРЕДМЕТ ДОГОВОРА
+Лицензиар предоставляет Лицензиату {{ terms.nature }} на использование бита «{{ beat.title }}» (ID {{ beat.id }}, {{ beat.bpm }} BPM, тональность {{ beat.musical_key }}) на условиях лицензии {{ license.name }}.
+Лицензиату передаются файлы: {{ license.files }}.
+
+3. УСЛОВИЯ ИСПОЛЬЗОВАНИЯ
+{% for line in terms.lines %}3.{{ loop.index }}. {{ line }}
+{% endfor %}
+4. ВОЗНАГРАЖДЕНИЕ
+Вознаграждение Лицензиара — {{ price }} руб. Сервисный сбор платформы OhBeat — {{ fee }} руб. — оплачивается Лицензиатом сверх вознаграждения.
+
+5. ВСТУПЛЕНИЕ В СИЛУ
+Договор вступает в силу с момента оплаты заказа № {{ order_id }}. Если оплата не прошла или отменена, договор не порождает правовых последствий.
+{{ terms.signature_clause }}
