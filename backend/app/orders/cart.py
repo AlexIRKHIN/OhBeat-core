@@ -12,7 +12,7 @@ from app.common.config import get_settings
 from app.common.errors import ApiError
 from app.common.storage import ObjectStorage
 from app.dictionaries.models import License
-from app.orders.models import CartItem
+from app.orders.models import CartItem, Order
 from app.orders.money import service_fee
 from app.orders.schemas import CartItemOut, CartOut
 from app.users.models import Profile
@@ -44,6 +44,10 @@ def get_cart(db: Session, storage: ObjectStorage, user_id: int) -> CartOut:
         .where(CartItem.user_id == user_id, Beat.status != "deleted")
         .order_by(CartItem.added_at)
     ).all()
+    # The buyer's own pending order holds the reservation: say so instead of "another buyer"
+    reserved_orders = {r.Beat.reserved_order_id for r in rows if r.Beat.status == "reserved"}
+    own_orders = set(db.scalars(select(Order.id).where(
+        Order.id.in_(reserved_orders), Order.customer_id == user_id, Order.status == "pending")))
     covers = dict(db.execute(
         select(BeatFile.beat_id, BeatFile.storage_key)
         .where(BeatFile.beat_id.in_([r.Beat.id for r in rows]), BeatFile.kind == "cover")
@@ -55,6 +59,9 @@ def get_cart(db: Session, storage: ObjectStorage, user_id: int) -> CartOut:
     items, items_total, fee_total = [], Decimal("0"), Decimal("0")
     for row in rows:
         reason = unavailable_reason(row.Beat, row.BeatPrice, user_id)
+        in_own_order = reason == "BEAT_RESERVED" and row.Beat.reserved_order_id in own_orders
+        if in_own_order:
+            reason = "IN_YOUR_ORDER"  # ASSUMPTION: GAP-66
         price = Decimal(row.BeatPrice.price) if row.BeatPrice else Decimal("0")
         fee = service_fee(price)
         cover = covers.get(row.Beat.id)
@@ -68,6 +75,7 @@ def get_cart(db: Session, storage: ObjectStorage, user_id: int) -> CartOut:
             service_fee=fee,
             available=reason is None,
             unavailable_reason=reason,
+            order_id=row.Beat.reserved_order_id if in_own_order else None,
         ))
         if reason is None:  # FR-15: totals count only what can be bought
             items_total += price

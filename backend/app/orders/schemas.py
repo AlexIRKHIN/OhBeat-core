@@ -34,7 +34,9 @@ class CartItemOut(Money):
     price: Decimal
     service_fee: Decimal
     available: bool
-    unavailable_reason: str | None  # BEAT_RESERVED | BEAT_SOLD | BEAT_NOT_AVAILABLE | LICENSE_INACTIVE | OWN_BEAT
+    # BEAT_RESERVED | BEAT_SOLD | BEAT_NOT_AVAILABLE | LICENSE_INACTIVE | OWN_BEAT | IN_YOUR_ORDER (GAP-66)
+    unavailable_reason: str | None
+    order_id: int | None = None  # IN_YOUR_ORDER: the pending order of this buyer that holds the reservation
 
 
 class CartOut(Money):

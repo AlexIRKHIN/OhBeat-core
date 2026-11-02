@@ -1,5 +1,6 @@
-"""Demo catalog: 12 beats with different genres, BPM, keys and prices, published as the seeded
-Producer through the real path (POST /beats -> direct upload to MinIO -> confirm -> Media Worker).
+"""Demo catalog: 12 beats of the seeded Producer and 4 of the second one (SEED_PRODUCER2_*, to show
+the split of a payment between two sellers), with different genres, BPM, keys and prices, published
+through the real path (POST /beats -> direct upload to MinIO -> confirm -> Media Worker).
 
     docker compose exec api python -m seeds.demo_beats
 
@@ -37,6 +38,14 @@ BEATS = [
     ("Rock Anthem", ["Rock"], 128, "E", {"basic": 3000}, False, (240, 106, 114)),
     ("Pop Sugar", ["Pop"], 118, "C", {"basic": 1000, "premium": 2000, "trackout": 4500, "exclusive": 25000}, True, (120, 210, 242)),
     ("Dark Trap", ["Trap", "Drill"], 150, "Gm", {"basic": 2800, "premium": 5000}, False, (79, 191, 225)),
+]
+
+# The second Producer (Nova Sound); prices like 999 give a fee with kopecks (99.90, GAP-42)
+BEATS_2 = [
+    ("Nova Pulse", ["Synthwave", "House"], 122, "Em", {"basic": 1750, "premium": 3255, "exclusive": 28000}, True, (242, 164, 58)),
+    ("Cold Drill", ["Drill"], 144, "A#m", {"basic": 2100, "trackout": 6400}, True, (120, 210, 242)),
+    ("Sunday Lo-Fi", ["Lo-Fi"], 76, "D", {"basic": 999, "premium": 1995}, False, (169, 195, 207)),
+    ("Gold Chains", ["Trap"], 136, "Fm", {"basic": 2400, "premium": 4600, "exclusive": 45000}, True, (240, 106, 114)),
 ]
 
 
@@ -101,9 +110,16 @@ def upload(form: dict, name: str, data: bytes) -> None:
 
 
 def main() -> None:
+    publish("SEED_PRODUCER", BEATS)
+    if os.environ.get("SEED_PRODUCER2_EMAIL"):
+        publish("SEED_PRODUCER2", BEATS_2)
+
+
+def publish(prefix: str, beats: list) -> None:
+    """Publishes `beats` as the Producer whose login is <prefix>_EMAIL / <prefix>_PASSWORD in .env."""
     with httpx.Client(base_url=API, timeout=60) as api:
         token = api.post("/auth/login", json={
-            "email": os.environ["SEED_PRODUCER_EMAIL"], "password": os.environ["SEED_PRODUCER_PASSWORD"],
+            "email": os.environ[f"{prefix}_EMAIL"], "password": os.environ[f"{prefix}_PASSWORD"],
         }).raise_for_status().json()["access_token"]
         api.headers["Authorization"] = f"Bearer {token}"
 
@@ -115,7 +131,7 @@ def main() -> None:
                 break
 
         created = []
-        for title, genres, bpm, key, prices, with_stems, colour in BEATS:
+        for title, genres, bpm, key, prices, with_stems, colour in beats:
             if title in existing:
                 print(f"skip   {title} (already exists)")
                 continue

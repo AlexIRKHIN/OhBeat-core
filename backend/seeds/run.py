@@ -71,26 +71,34 @@ def main() -> None:
         ensure_user(conn, os.environ["SEED_ARTIST_EMAIL"], os.environ["SEED_ARTIST_PASSWORD"], "Test Artist", ["artist"])
         ensure_user(conn, os.environ["SEED_ADMIN_EMAIL"], os.environ["SEED_ADMIN_PASSWORD"], "Administrator", ["admin"])
 
-        producer_id = ensure_user(
-            conn, os.environ["SEED_PRODUCER_EMAIL"], os.environ["SEED_PRODUCER_PASSWORD"],
-            "Test Producer", ["artist", "producer"],
-        )
-        # A producer is complete only with contract details and a seller id in YooKassa (FR-33)
-        conn.execute(
-            text(
-                "INSERT INTO billing_profiles (user_id, payer_type, last_name, first_name, email, phone) "
-                "VALUES (:u, 'individual', 'Петров', 'Пётр', :e, '+79000000001') ON CONFLICT DO NOTHING"
-            ),
-            {"u": producer_id, "e": os.environ["SEED_PRODUCER_EMAIL"]},
-        )
-        conn.execute(
-            text(
-                "INSERT INTO producer_accounts (user_id, tax_status, yookassa_account_id, pep_agreement_at) "
-                "VALUES (:u, 'self_employed', :acc, now()) ON CONFLICT DO NOTHING"
-            ),
-            {"u": producer_id, "acc": os.environ["SEED_PRODUCER_YOOKASSA_ACCOUNT_ID"]},
-        )
+        ensure_producer(conn, "SEED_PRODUCER", "Test Producer", ("Петров", "Пётр", "+79000000001"))
+        # The second Producer shows the split of one payment between two sellers (FR-30, slice 3)
+        if os.environ.get("SEED_PRODUCER2_EMAIL"):
+            ensure_producer(conn, "SEED_PRODUCER2", "Nova Sound", ("Сидорова", "Анна", "+79000000002"))
     print("Seeds applied")
+
+
+def ensure_producer(conn, prefix: str, display_name: str, person: tuple[str, str, str]) -> int:
+    """A producer is complete only with contract details and a seller id in YooKassa (FR-33).
+    `prefix` names the variables in .env: <prefix>_EMAIL, _PASSWORD, _YOOKASSA_ACCOUNT_ID."""
+    email = os.environ[f"{prefix}_EMAIL"]
+    producer_id = ensure_user(conn, email, os.environ[f"{prefix}_PASSWORD"], display_name, ["artist", "producer"])
+    last_name, first_name, phone = person
+    conn.execute(
+        text(
+            "INSERT INTO billing_profiles (user_id, payer_type, last_name, first_name, email, phone) "
+            "VALUES (:u, 'individual', :ln, :fn, :e, :p) ON CONFLICT DO NOTHING"
+        ),
+        {"u": producer_id, "ln": last_name, "fn": first_name, "e": email, "p": phone},
+    )
+    conn.execute(
+        text(
+            "INSERT INTO producer_accounts (user_id, tax_status, yookassa_account_id, pep_agreement_at) "
+            "VALUES (:u, 'self_employed', :acc, now()) ON CONFLICT DO NOTHING"
+        ),
+        {"u": producer_id, "acc": os.environ[f"{prefix}_YOOKASSA_ACCOUNT_ID"]},
+    )
+    return producer_id
 
 
 if __name__ == "__main__":

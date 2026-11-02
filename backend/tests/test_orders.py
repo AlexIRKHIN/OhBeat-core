@@ -142,6 +142,23 @@ def test_fr14_cart_marks_beat_reserved_later_and_excludes_it_from_total(client, 
     assert cart["total"] == 1650
 
 
+def test_gap66_cart_shows_own_reservation_as_in_your_order(client, producer, owner_engine):
+    beat_id = _beat(client, owner_engine, producer)
+    artist = _artist(client)
+    client.put(f"/v1/cart/items/{beat_id}", json={"license": "exclusive"}, headers=auth(artist))
+    order_id = _order(client, artist, [(beat_id, "exclusive", 25000)]).json()["order_id"]
+
+    mine = client.get("/v1/cart", headers=auth(artist)).json()["items"][0]
+    assert (mine["unavailable_reason"], mine["order_id"]) == ("IN_YOUR_ORDER", order_id)
+    other = _artist(client, email="other@example.com")
+    client.put(f"/v1/cart/items/{beat_id}", json={"license": "basic"}, headers=auth(other))  # 409, not added
+    with owner_engine.begin() as conn:
+        conn.execute(text("INSERT INTO cart_items (user_id, beat_id, license_id) SELECT u.id, :b, 1 FROM users u "
+                          "WHERE u.email = 'other@example.com'"), {"b": beat_id})
+    theirs = client.get("/v1/cart", headers=auth(other)).json()["items"][0]
+    assert (theirs["unavailable_reason"], theirs["order_id"]) == ("BEAT_RESERVED", None)
+
+
 # --- Creating an order ---
 
 def test_fr15_fr30_fr32_order_for_two_producers(client, producer, owner_engine):
