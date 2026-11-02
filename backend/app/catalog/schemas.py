@@ -148,3 +148,14 @@ class BeatPage(BaseModel):
 
 
 LICENSE_CODE_LIST = list(LICENSE_CODES)
+
+
+class ProducerPage(BaseModel):
+    """REST API §2.9: public profile and the showcase of beats with catalog filters."""
+
+    id: int
+    display_name: str
+    bio: str | None
+    avatar_url: str | None
+    items: list[BeatOut]
+    next_cursor: str | None

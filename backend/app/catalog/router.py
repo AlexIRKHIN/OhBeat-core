@@ -1,15 +1,21 @@
 """HTTP layer of beats (REST API §2.1, §2.2, §2.4, §2.10)."""
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.catalog import service
+from app.catalog.browse import CatalogFilters, browse, producer_page
+from app.catalog.rules import BPM_MAX, BPM_MIN
 from app.catalog.schemas import (
     BeatCreate,
     BeatCreated,
     BeatOut,
     BeatPage,
     LicenseUpdate,
+    MusicalKey,
+    ProducerPage,
     StatusChange,
     StatusOut,
     UploadsOut,
@@ -21,6 +27,47 @@ from app.common.storage import ObjectStorage, get_storage
 
 router = APIRouter(tags=["beats"])
 producer_only = require_role("producer")
+
+
+def catalog_filters(
+    genre: str | None = Query(None, max_length=64),
+    bpm_min: int | None = Query(None, ge=BPM_MIN, le=BPM_MAX),
+    bpm_max: int | None = Query(None, ge=BPM_MIN, le=BPM_MAX),
+    musical_key: MusicalKey | None = Query(None),
+    price_max: int | None = Query(None, ge=0),
+    sort: Literal["newest"] = Query("newest"),  # ASSUMPTION: GAP-24 — the only documented order
+) -> CatalogFilters:
+    return CatalogFilters(genre=genre, bpm_min=bpm_min, bpm_max=bpm_max, musical_key=musical_key, price_max=price_max)
+
+
+# ASSUMPTION: GAP-60 — 20 by default (the example of REST API §2.3), at most 50
+PageSize = Query(20, ge=1, le=50)
+
+
+@router.get("/beats", response_model=BeatPage)
+def catalog(
+    filters: CatalogFilters = Depends(catalog_filters),
+    cursor: str | None = Query(None, max_length=200),
+    limit: int = PageSize,
+    db: Session = Depends(get_db),
+    storage: ObjectStorage = Depends(get_storage),
+) -> BeatPage:
+    """REST API §2.3. Public. Beats in `active` and `reserved` (with is_reserved), newest first,
+    prices of the Producer without the service fee. Errors: 400 VALIDATION_ERROR."""
+    return browse(db, storage, filters, cursor, limit)
+
+
+@router.get("/producers/{producer_id}", response_model=ProducerPage)
+def producer(
+    producer_id: int,
+    filters: CatalogFilters = Depends(catalog_filters),
+    cursor: str | None = Query(None, max_length=200),
+    limit: int = PageSize,
+    db: Session = Depends(get_db),
+    storage: ObjectStorage = Depends(get_storage),
+) -> ProducerPage:
+    """REST API §2.9. Public profile and showcase with the catalog filters. Errors: 404 NOT_FOUND."""
+    return producer_page(db, storage, producer_id, filters, cursor, limit)
 
 
 @router.post("/beats", status_code=status.HTTP_201_CREATED, response_model=BeatCreated)
