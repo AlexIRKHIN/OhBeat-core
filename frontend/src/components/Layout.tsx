@@ -59,6 +59,9 @@ export function Layout({ children }: { children: ReactNode }) {
   const links = user ? (
     <>
       <CartLink onClick={close} />
+      <NavLink to="/purchases" className={navClass} onClick={close}>
+        {t("nav.purchases")}
+      </NavLink>
       <NavLink to="/profile" className={navClass} onClick={close}>
         {t("nav.profile")}
       </NavLink>
@@ -72,6 +75,9 @@ export function Layout({ children }: { children: ReactNode }) {
           </NavLink>
           <NavLink to="/producer/beats/new" className={navClass} onClick={close}>
             {t("nav.uploadBeat")}
+          </NavLink>
+          <NavLink to="/producer/sales" className={navClass} onClick={close}>
+            {t("nav.sales")}
           </NavLink>
         </>
       ) : (
@@ -109,17 +115,17 @@ export function Layout({ children }: { children: ReactNode }) {
             {user && <span className="hidden max-w-[10rem] truncate text-sm text-soft sm:inline">{user.display_name}</span>}
             <button
               type="button"
-              className="btn-secondary px-3 md:hidden"
+              className="btn-secondary px-3 xl:hidden"
               aria-expanded={open}
               aria-label={t("nav.menu")}
               onClick={() => setOpen((v) => !v)}
             >
               ☰
             </button>
-            <nav className="hidden items-center gap-1 md:flex">{links}</nav>
+            <nav className="hidden items-center gap-1 xl:flex">{links}</nav>
           </div>
         </div>
-        {open && <nav className="mx-auto max-w-5xl space-y-1 px-4 pb-3 md:hidden">{links}</nav>}
+        {open && <nav className="mx-auto max-w-5xl space-y-1 px-4 pb-3 xl:hidden">{links}</nav>}
       </header>
       {/* pb-24 leaves room for the player bar at the bottom */}
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-6">{children}</main>

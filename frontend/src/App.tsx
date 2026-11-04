@@ -14,10 +14,12 @@ import { LoginPage } from "./pages/LoginPage";
 import { MyBeatsPage } from "./pages/MyBeatsPage";
 import { OrderPage } from "./pages/OrderPage";
 import { PaymentReturnPage } from "./pages/PaymentReturnPage";
+import { PurchasesPage } from "./pages/PurchasesPage";
 import { ProducerConnectPage } from "./pages/ProducerConnectPage";
 import { ProducerPage } from "./pages/ProducerPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { SalesPage } from "./pages/SalesPage";
 import { UploadBeatPage } from "./pages/UploadBeatPage";
 
 /** Pages for signed-in users; a guest is sent to sign in and comes back afterwards.
@@ -46,6 +48,8 @@ export function App() {
         <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
         <Route path="/orders/:id" element={<RequireAuth><OrderPage /></RequireAuth>} />
         <Route path="/orders/:id/return" element={<RequireAuth><PaymentReturnPage /></RequireAuth>} />
+        <Route path="/purchases" element={<RequireAuth><PurchasesPage /></RequireAuth>} />
+        <Route path="/producer/sales" element={<RequireAuth role="producer"><SalesPage /></RequireAuth>} />
         <Route path="/producer/connect" element={<RequireAuth><ProducerConnectPage /></RequireAuth>} />
         <Route path="/producer/beats" element={<RequireAuth role="producer"><MyBeatsPage /></RequireAuth>} />
         <Route path="/producer/beats/new" element={<RequireAuth role="producer"><UploadBeatPage /></RequireAuth>} />

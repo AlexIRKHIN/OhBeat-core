@@ -172,3 +172,35 @@ export interface Order {
   payment_cancel_reason: string | null; // insufficient_funds, … (FR-25)
   cancel_reason: string | null; // BEAT_SOLD, BEAT_RESERVED, … (FR-23)
 }
+
+// --- Fulfillment (REST API §2.6, §2.10, §2.12) ---
+
+export type DownloadKind = "mp3" | "wav" | "stems" | "contract";
+
+export interface Downloads {
+  expires_at: string;
+  items: { beat_id: number; license: LicenseCode; contract_number: string; files: { kind: DownloadKind; url: string }[] }[];
+}
+
+export interface Purchase {
+  order_id: number;
+  item_id: number;
+  contract_number: string;
+  beat_id: number;
+  title: string;
+  cover_url: string | null;
+  producer: string;
+  license: LicenseCode;
+  price: number;
+  service_fee: number;
+  paid_at: string | null;
+  pdf_sha256: string | null;
+}
+
+export interface Sales {
+  date_from: string;
+  date_to: string;
+  count: number;
+  total: number;
+  items: { order_id: number; beat_id: number; title: string; license: LicenseCode; price: number; paid_at: string }[];
+}

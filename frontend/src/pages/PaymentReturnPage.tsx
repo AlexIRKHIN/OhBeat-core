@@ -11,6 +11,7 @@ import { ErrorState, LoadingState, NotFoundPage, PageTitle, Spinner } from "../c
 import { formatRub } from "../lib/catalog";
 import { POLL_INTERVAL_MS, keepPolling, returnState } from "../lib/payment";
 import { PayPanel } from "./OrderPage";
+import { DownloadLinks } from "../components/DownloadLinks";
 
 export function PaymentReturnPage() {
   const { t } = useTranslation();
@@ -50,7 +51,13 @@ export function PaymentReturnPage() {
         {state === "paid" && (
           <>
             <p className="text-lg font-semibold text-cyan">{t("payment.success", { total: formatRub(o.total) })}</p>
-            <p className="text-sm text-soft">{t("payment.paidText")}</p>
+            {/* FR-27: paid — links to the files and the contracts right here */}
+            <div className="flex justify-center">
+              <DownloadLinks orderId={o.order_id} />
+            </div>
+            <Link to="/purchases" className="link block text-sm">
+              {t("nav.purchases")}
+            </Link>
           </>
         )}
         {state === "canceled" && (

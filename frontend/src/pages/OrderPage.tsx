@@ -8,6 +8,7 @@ import { Link, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import type { Order } from "../api/types";
 import { useDictionaries } from "../components/BeatBrowser";
+import { DownloadLinks } from "../components/DownloadLinks";
 import { ErrorState, LoadingState, NotFoundPage, PageTitle, Spinner } from "../components/ui";
 import { formatRub } from "../lib/catalog";
 import { errorText } from "../lib/errors";
@@ -94,7 +95,7 @@ export function OrderPage() {
         <aside className="card h-fit space-y-3">
           <Totals cart={o} />
           {o.status === "pending" && <PayPanel order={o} />}
-          {o.status === "paid" && <p className="text-sm text-cyan">{t("payment.paidText")}</p>}
+          {o.status === "paid" && <DownloadLinks orderId={o.order_id} />}
           {o.status === "canceled" && o.cancel_reason && (
             <p className="text-sm text-danger">{t(`payment.cancelReason.${o.cancel_reason}`, { defaultValue: t("payment.cancelReason.other") })}</p>
           )}
