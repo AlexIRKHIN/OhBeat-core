@@ -25,7 +25,8 @@ from app.common.config import get_settings
 from app.common.errors import ApiError
 from app.common.i18n import t
 from app.common.storage import ObjectStorage
-from app.contracts.draft import DraftItem, license_files, render_draft, sha256_text
+from app.contracts.draft import render_draft, sha256_text
+from app.contracts.issue import contract_number, draft_item
 from app.dictionaries.models import License
 from app.orders.cart import unavailable_reason
 from app.orders.models import Contract, Order, OrderItem, Payment, PaymentEvent
@@ -150,7 +151,7 @@ def create_order(db: Session, user_id: int, data: OrderCreate, ip: str | None) -
     for n, (item, beat, license_row) in enumerate(sorted(items, key=lambda x: x[0].id), start=1):
         if license_row.is_exclusive:
             continue  # signed with a one-time code (slice 4, RFC ПЭП §3)
-        draft = render_draft(_draft_item(order, item, beat, license_row, n), order.billing_snapshot, "offer_accept")
+        draft = render_draft(draft_item(order, item, beat, license_row, n), order.billing_snapshot, "offer_accept")
         db.add(Contract(order_item_id=item.id, signature_type="offer_accept", draft_sha256=sha256_text(draft),
                         signer_ip=ip or "unknown", signed_at=now))
 
@@ -179,20 +180,6 @@ def _conflict_by_actual_status(db: Session, beat_id: int) -> ApiError:
     status = db.scalar(select(Beat.status).where(Beat.id == beat_id))
     code = {"reserved": "BEAT_RESERVED", "sold": "BEAT_SOLD"}.get(status, "BEAT_NOT_AVAILABLE")
     return ApiError(409, code, [{"field": "items", "issue": t(code), "beat_id": beat_id}])
-
-
-def _draft_item(order: Order, item: OrderItem, beat: Beat, license_row: License, n: int) -> DraftItem:
-    return DraftItem(
-        order_id=order.id,
-        number=f"{order.id}-{n}",  # ASSUMPTION: GAP-32
-        beat={"id": beat.id, "title": beat.title, "bpm": beat.bpm, "musical_key": beat.musical_key},
-        license_code=license_row.code,
-        license_name=license_row.name,
-        license_files=license_files(license_row.includes_mp3, license_row.includes_wav, license_row.includes_stems),
-        price=Decimal(item.price_at_purchase),
-        fee=Decimal(item.platform_fee),
-        producer_id=item.producer_id,
-    )
 
 
 # --- Reading ---
@@ -227,7 +214,7 @@ def get_order(db: Session, storage: ObjectStorage, order_id: int, user_id: int) 
         cover = covers.get(row.Beat.id)
         items.append(OrderItemOut(
             item_id=row.OrderItem.id,
-            contract_number=f"{order.id}-{n}",
+            contract_number=contract_number(order.id, n),
             beat_id=row.Beat.id,
             title=row.Beat.title,
             cover_url=storage.public_url(cover) if cover and cover.startswith("covers/") else None,

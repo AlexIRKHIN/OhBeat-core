@@ -37,6 +37,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "RESERVATION_EXPIRED": "Время резерва истекло. Оформите заказ заново",
         "SIGNATURE_REQUIRED": "Сначала подпишите договор на Exclusive кодом из SMS",
         "PAYMENT_PROVIDER_UNAVAILABLE": "Платежный сервис временно недоступен, попробуйте позже",
+        "ORDER_NOT_PAID": "Заказ ещё не оплачен",
         # Field issues (details[].issue)
         "required": "Обязательное поле",
         "invalid_value": "Недопустимое значение",
@@ -66,6 +67,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "file_not_declared": "Этот файл не заявлен при создании бита",
         "price_changed_to": "Новая цена: {price} ₽",
         "phone_required_for_exclusive": "Для Exclusive нужен телефон: на него придёт код подписи",
+        "period_reversed": "Начало периода позже конца",
+        "period_too_long": "Период не длиннее {days} дней",
     },
     "en": {
         "VALIDATION_ERROR": "Invalid request data",
@@ -94,6 +97,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "RESERVATION_EXPIRED": "The reservation time is over. Place the order again",
         "SIGNATURE_REQUIRED": "Sign the Exclusive contract with the SMS code first",
         "PAYMENT_PROVIDER_UNAVAILABLE": "The payment service is temporarily unavailable, try again later",
+        "ORDER_NOT_PAID": "The order is not paid yet",
         "required": "Required field",
         "invalid_value": "Invalid value",
         "invalid_type": "Invalid value type",
@@ -122,6 +126,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "file_not_declared": "This file was not declared when the beat was created",
         "price_changed_to": "New price: {price} RUB",
         "phone_required_for_exclusive": "Exclusive needs a phone: the signature code is sent to it",
+        "period_reversed": "The start of the period is after its end",
+        "period_too_long": "The period is at most {days} days",
     },
 }
 

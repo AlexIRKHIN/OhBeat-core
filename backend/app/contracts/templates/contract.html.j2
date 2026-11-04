@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Лицензионный договор № {{ number }}</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 22mm;
+          @bottom-center { content: "Договор № {{ number }} · стр. " counter(page) " из " counter(pages); font-size: 8pt; color: #555; } }
+  body { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; line-height: 1.45; color: #111; }
+  .text { white-space: pre-wrap; }
+  .stamp { margin-top: 10mm; border: 1.2pt solid #1d3f73; padding: 4mm 5mm; page-break-inside: avoid; }
+  .stamp h2 { margin: 0 0 3mm; font-size: 10pt; text-align: center; letter-spacing: 0.04em; color: #1d3f73; }
+  .stamp table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  .stamp td { padding: 0.6mm 0; vertical-align: top; }
+  .stamp td:first-child { width: 48mm; color: #333; }
+  .hash { font-family: "DejaVu Sans Mono", monospace; font-size: 8pt; word-break: break-all; }
+  .gap { height: 2mm; }
+</style>
+</head>
+<body>
+<div class="text">{{ draft }}</div>
+
+<div class="stamp">
+  <h2>{{ stamp.title }}</h2>
+  <table>
+    {% for label, value in stamp.rows %}
+      {% if label %}
+      <tr><td>{{ label }}:</td><td{% if label.startswith("SHA-256") %} class="hash"{% endif %}>{{ value }}</td></tr>
+      {% else %}
+      <tr><td colspan="2"><div class="gap"></div></td></tr>
+      {% endif %}
+    {% endfor %}
+  </table>
+</div>
+</body>
+</html>

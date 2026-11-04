@@ -8,6 +8,7 @@ happens outside: the buyer pays on the YooKassa page (`fake.hold`), YooKassa sen
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import httpx
@@ -41,12 +42,25 @@ def producer(client):
 
 
 def _sign(owner_engine, order_id: int) -> None:
-    """Slice 4 signs Exclusive with an SMS code; here the signed contracts are put in place directly."""
-    with owner_engine.begin() as conn:
-        conn.execute(text(
-            "INSERT INTO contracts (order_item_id, signature_type, draft_sha256, signer_ip, signed_at, signer_phone) "
-            "SELECT oi.id, 'otp', repeat('a', 64), '127.0.0.1', now(), '+79001234567' FROM order_items oi "
-            "JOIN licenses l ON l.id = oi.license_id WHERE oi.order_id = :o AND l.is_exclusive"), {"o": order_id})
+    """Slice 4 signs Exclusive with an SMS code; here the signed contracts are put in place directly,
+    with the real hash of the draft (the PDF is made only from the text that was signed)."""
+    from app.catalog.models import Beat
+    from app.contracts.draft import render_draft, sha256_text
+    from app.contracts.issue import draft_item
+    from app.dictionaries.models import License
+    from app.orders.models import Contract, Order, OrderItem
+
+    with get_session_factory()() as db:
+        order = db.get(Order, order_id)
+        items = db.query(OrderItem).filter_by(order_id=order_id).order_by(OrderItem.id).all()
+        for n, item in enumerate(items, start=1):
+            license_row = db.get(License, item.license_id)
+            if not license_row.is_exclusive:
+                continue
+            draft = render_draft(draft_item(order, item, db.get(Beat, item.beat_id), license_row, n), order.billing_snapshot, "otp")
+            db.add(Contract(order_item_id=item.id, signature_type="otp", draft_sha256=sha256_text(draft),
+                            signer_ip="127.0.0.1", signed_at=datetime.now(UTC), signer_phone="+79001234567"))
+        db.commit()
 
 
 def _pay(client, tokens, order_id: int):
@@ -208,7 +222,7 @@ def test_fr22_fr24_hold_capture_and_paid(client, owner_engine, fake, exclusive_o
     assert (order["status"], order["payment_status"]) == ("paid", "succeeded")
     assert client.get("/v1/cart", headers=auth(artist)).json()["items"] == []  # GAP-29
     actions = [a for a, in _rows(owner_engine, "SELECT action FROM audit_log WHERE entity = 'order' AND entity_id = :o ORDER BY id", o=order_id)]
-    assert actions[-3:] == ["payment.waiting_for_capture", "order.paid", "payment.succeeded"]
+    assert actions[-4:] == ["payment.waiting_for_capture", "order.paid", "contract.generated", "payment.succeeded"]
     assert client.get(f"/v1/beats/{beat_id}").status_code == 404  # FR-24: hidden from the catalog
 
 

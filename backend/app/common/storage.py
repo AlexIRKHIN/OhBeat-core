@@ -48,6 +48,8 @@ class ObjectStorage(Protocol):
 
     def public_url(self, key: str) -> str: ...
 
+    def presigned_get(self, bucket: str, key: str, expires_seconds: int, filename: str) -> str: ...
+
 
 def _client(endpoint: str) -> BaseClient:
     s = get_settings()
@@ -111,6 +113,16 @@ class S3Storage:
             self._internal.put_object(Bucket=bucket, Key=key, Body=data, **extra)
         except (ClientError, BotoCoreError) as exc:
             raise StorageUnavailable from exc
+
+    def presigned_get(self, bucket: str, key: str, expires_seconds: int, filename: str) -> str:
+        """A download link for one private object (FR-28, NFR-8). Signed for the browser's host;
+        the file is saved under `filename` instead of the storage key."""
+        return self._signer.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": key,
+                    "ResponseContentDisposition": f"attachment; filename=\"{filename}\""},
+            ExpiresIn=expires_seconds,
+        )
 
     def public_url(self, key: str) -> str:
         """Address of an object in the public bucket (MinIO plays the role of CDN locally)."""

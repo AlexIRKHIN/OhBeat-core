@@ -25,6 +25,8 @@ from sqlalchemy.orm import Session
 from app.catalog.models import Beat
 from app.common.audit import write_audit
 from app.common.config import get_settings
+from app.common.storage import ObjectStorage, get_storage
+from app.contracts.issue import issue_contracts
 from app.dictionaries.models import License
 from app.orders.models import CartItem, Order, OrderItem, Payment, PaymentEvent
 from app.payments.gateway import GatewayRejected, GatewayUnavailable, PaymentGateway
@@ -54,8 +56,9 @@ class Followups:
         self.emails += other.emails
 
 
-def process(db: Session, gateway: PaymentGateway, provider_payment_id: str) -> Followups:
-    """Applies the ACTUAL status of a payment. Raises GatewayUnavailable → the webhook answers 500."""
+def process(db: Session, gateway: PaymentGateway, provider_payment_id: str, storage: ObjectStorage | None = None) -> Followups:
+    """Applies the ACTUAL status of a payment. Raises GatewayUnavailable (or a storage failure while
+    making the contracts) → the webhook answers 500 and YooKassa repeats it."""
     try:
         payment_uuid = uuid.UUID(provider_payment_id)
     except ValueError:
@@ -90,8 +93,12 @@ def process(db: Session, gateway: PaymentGateway, provider_payment_id: str) -> F
                .order_by(Beat.id).with_for_update())
     order = db.scalar(select(Order).where(Order.id == payment.order_id).with_for_update())
     db.refresh(payment, with_for_update=True)
-    handler = {"waiting_for_capture": _on_hold, "succeeded": _on_succeeded, "canceled": _on_canceled}[status]
-    followups = handler(db, payment, order, actual)
+    if status == "waiting_for_capture":
+        followups = _on_hold(db, payment, order, actual)
+    elif status == "succeeded":
+        followups = _on_succeeded(db, payment, order, actual, storage or get_storage())
+    else:
+        followups = _on_canceled(db, payment, order, actual)
     write_audit(db, action=event, entity="order", entity_id=order.id, actor_user_id=None, ip=None,
                 details={"payment_id": provider_payment_id, "amount": actual.get("amount", {}).get("value"),
                          "order_status": order.status,
@@ -181,7 +188,7 @@ def decision(db: Session, payment: Payment, order: Order, actual: dict) -> str:
 
 # --- succeeded: FR-24 ---
 
-def _on_succeeded(db: Session, payment: Payment, order: Order, actual: dict) -> Followups:
+def _on_succeeded(db: Session, payment: Payment, order: Order, actual: dict, storage: ObjectStorage) -> Followups:
     payment.status = "succeeded"
     followups = Followups()
     if order.status not in ("pending", "expired"):
@@ -201,6 +208,7 @@ def _on_succeeded(db: Session, payment: Payment, order: Order, actual: dict) -> 
     db.execute(delete(CartItem).where(CartItem.user_id == order.customer_id, CartItem.beat_id.in_(beats)))
     write_audit(db, action="order.paid", entity="order", entity_id=order.id, actor_user_id=None, ip=None,
                 details={"total": str(order.total_amount)})
+    issue_contracts(db, storage, order)  # FR-26, ASSUMPTION: GAP-43 — before the commit
     followups.emails += _sale_emails(db, order)
     return followups
 
