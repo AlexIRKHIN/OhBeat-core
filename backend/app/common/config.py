@@ -44,6 +44,8 @@ class Settings(BaseSettings):
 
     # FR-8: beats left in `uploading` are deleted after this many hours
     upload_ttl_hours: int = 24
+    # FR-37, ASSUMPTION: GAP-21 — a beat in `processing` longer than this is "stuck" (retries ≈ 13 min + margin)
+    stuck_processing_minutes: int = 30
 
     # Purchases (FR-18, FR-28, FR-29). Shorter values are handy for a demo, the documented ones are defaults.
     reservation_ttl_minutes: int = 15  # FR-18: the Exclusive reservation

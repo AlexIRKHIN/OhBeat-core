@@ -220,6 +220,15 @@ def confirm_upload(db: Session, storage: ObjectStorage, user_id: int, beat_id: i
 
     # One transaction: the new status and the event for Media Worker (transactional outbox)
     beat.status = "processing"
+    enqueue_processing(db, beat, files)
+    db.commit()
+    return StatusOut(id=beat.id, status=beat.status)
+
+
+def enqueue_processing(db: Session, beat: Beat, files: dict[str, BeatFile] | None = None) -> None:
+    """The task for Media Worker, added to the current transaction (outbox). Used by the upload
+    confirmation and by the Administrator's "process again" (FR-37): the same files, the same options."""
+    files = files or _files_of(db, beat.id)
     add_event(
         db,
         PROCESS_KEY,
@@ -231,11 +240,9 @@ def confirm_upload(db: Session, storage: ObjectStorage, user_id: int, beat_id: i
                 "stems_key": files["stems"].storage_key if "stems" in files else None,
                 "cover_key": files["cover"].storage_key,
             },
-            "options": {"voice_tag": True, "tag_interval_sec": settings.voice_tag_interval_sec},
+            "options": {"voice_tag": True, "tag_interval_sec": get_settings().voice_tag_interval_sec},
         },
     )
-    db.commit()
-    return StatusOut(id=beat.id, status=beat.status)
 
 
 # --- Cards ---

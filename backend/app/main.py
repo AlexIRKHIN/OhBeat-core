@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from app.admin.router import router as admin_router
 from app.auth.router import router as auth_router
 from app.catalog.router import router as catalog_router
 from app.common.config import get_settings
@@ -57,6 +58,7 @@ app.include_router(orders_router, prefix=API_PREFIX)
 app.include_router(payments_router, prefix=API_PREFIX)
 app.include_router(purchases_router, prefix=API_PREFIX)
 app.include_router(signature_router, prefix=API_PREFIX)
+app.include_router(admin_router, prefix=API_PREFIX)
 
 
 @app.get("/health", include_in_schema=False)
