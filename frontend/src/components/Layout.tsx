@@ -58,6 +58,11 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const links = user ? (
     <>
+      {hasRole("admin") && (
+        <NavLink to="/admin" className={navClass} onClick={close}>
+          {t("nav.admin")}
+        </NavLink>
+      )}
       <CartLink onClick={close} />
       <NavLink to="/purchases" className={navClass} onClick={close}>
         {t("nav.purchases")}

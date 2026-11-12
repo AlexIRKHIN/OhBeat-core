@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { LoadingState, NotFoundPage } from "./components/ui";
+import { AdminPage } from "./pages/AdminPage";
 import { BillingPage } from "./pages/BillingPage";
 import { BeatPage } from "./pages/BeatPage";
 import { CartPage } from "./pages/CartPage";
@@ -24,11 +25,13 @@ import { UploadBeatPage } from "./pages/UploadBeatPage";
 
 /** Pages for signed-in users; a guest is sent to sign in and comes back afterwards.
  *  With `role`, a user without it is sent to connect to sales (FR-33: no publishing without the Producer role). */
-function RequireAuth({ children, role }: { children: ReactNode; role?: "producer" }) {
+function RequireAuth({ children, role }: { children: ReactNode; role?: "producer" | "admin" }) {
   const { user, loading, hasRole } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingState />;
   if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+  // REST API §2.13: the administration exists only for the role `admin` — others see "not found"
+  if (role === "admin" && !hasRole("admin")) return <NotFoundPage />;
   if (role && !hasRole(role)) return <Navigate to="/producer/connect" replace />;
   return <>{children}</>;
 }
@@ -53,6 +56,7 @@ export function App() {
         <Route path="/producer/connect" element={<RequireAuth><ProducerConnectPage /></RequireAuth>} />
         <Route path="/producer/beats" element={<RequireAuth role="producer"><MyBeatsPage /></RequireAuth>} />
         <Route path="/producer/beats/new" element={<RequireAuth role="producer"><UploadBeatPage /></RequireAuth>} />
+        <Route path="/admin" element={<RequireAuth role="admin"><AdminPage /></RequireAuth>} />
         <Route path="/legal/:doc" element={<LegalPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

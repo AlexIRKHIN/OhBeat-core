@@ -8,6 +8,7 @@ export function ConfirmModal({
   cancelLabel,
   danger,
   busy,
+  confirmDisabled,
   onConfirm,
   onCancel,
 }: {
@@ -17,6 +18,8 @@ export function ConfirmModal({
   cancelLabel: string;
   danger?: boolean;
   busy?: boolean;
+  /** Only the confirm button, e.g. until a required reason is typed */
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -47,8 +50,8 @@ export function ConfirmModal({
             type="button"
             className={danger ? "btn border border-danger/60 bg-danger/20 text-danger hover:bg-danger/30" : "btn-primary"}
             onClick={onConfirm}
-            disabled={busy}
-            autoFocus
+            disabled={busy || confirmDisabled}
+            autoFocus={!confirmDisabled}
           >
             {confirmLabel}
           </button>
