@@ -348,3 +348,17 @@ def test_fr26_exclusive_purchase_end_to_end(client, producer, owner_engine, sms,
 
     files = client.get(f"/v1/orders/{order_id}/downloads", headers=auth(artist)).json()["items"]
     assert [f["kind"] for f in files[1]["files"]] == ["mp3", "wav", "stems", "contract"]
+
+
+def test_mock_inbox_keeps_sms_and_email(tmp_path, monkeypatch):
+    """The end-to-end test reads the SMS code from the inbox file of the mock."""
+    import json
+
+    from app.notifications.service import LogNotifier
+
+    inbox = tmp_path / "messages.jsonl"
+    monkeypatch.setenv("MOCK_INBOX_PATH", str(inbox))
+    LogNotifier().send_sms("+79001234567", "OhBeat: код 123456")
+    LogNotifier().send_email("a@example.com", "Тема", "Текст")
+    lines = [json.loads(line) for line in inbox.read_text(encoding="utf-8").splitlines()]
+    assert [(m["kind"], m["to"]) for m in lines] == [("sms", "+79001234567"), ("email", "a@example.com")]

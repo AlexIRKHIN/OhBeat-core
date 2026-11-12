@@ -2,7 +2,7 @@
 the split of a payment between two sellers), with different genres, BPM, keys and prices, published
 through the real path (POST /beats -> direct upload to MinIO -> confirm -> Media Worker).
 
-    docker compose exec api python -m seeds.demo_beats
+    docker compose exec api python -m seeds.demo_beats    (also run once by the service demo-seed)
 
 Audio is synthesized here (a chord plus a kick on every beat of the given tempo), covers are drawn
 with Pillow. Running it again skips beats that already exist (matched by title).
@@ -20,7 +20,8 @@ import zipfile
 import httpx
 from PIL import Image, ImageDraw
 
-API = "http://localhost:8000/v1"
+# Inside the api container — localhost; the one-shot service demo-seed sets DEMO_API_URL=http://api:8000/v1
+API = os.environ.get("DEMO_API_URL", "http://localhost:8000/v1")
 RATE = 44100
 NOTE = {"C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5, "F#": 6, "G": 7, "G#": 8, "A": 9, "A#": 10, "B": 11}
 

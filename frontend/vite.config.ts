@@ -16,5 +16,6 @@ export default defineConfig({
   },
   // NFR-15: Safari 15+, Chrome 100+, Firefox 100+
   build: { target: ["safari15", "chrome100", "firefox100"] },
-  test: { environment: "jsdom" },
+  // Unit tests only; the end-to-end test in e2e/ is run by Playwright
+  test: { environment: "jsdom", include: ["src/**/*.test.{ts,tsx}"] },
 });

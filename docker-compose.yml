@@ -1,22 +1,30 @@
 name: ohbeat
 
-# Local environment of OhBeat. Start:  cp .env.example .env && docker compose up --build
+# Local environment of OhBeat. Start from scratch with one command:
+#   docker compose up --build
+# Settings come from .env.example; a .env next to it (not in git) overrides any of them.
 
 x-backend: &backend
   build: ./backend
   image: ohbeat/backend:dev
-  env_file: .env
+  env_file:
+    - path: .env.example
+    - path: .env
+      required: false
   environment: &backend-env
-    DATABASE_URL: postgresql+psycopg://${DB_APP_USER}:${DB_APP_PASSWORD}@postgres:5432/${DB_NAME}
-    MIGRATIONS_DATABASE_URL: postgresql+psycopg://${DB_OWNER_USER}:${DB_OWNER_PASSWORD}@postgres:5432/${DB_NAME}
+    DATABASE_URL: postgresql+psycopg://${DB_APP_USER:-ohbeat_api}:${DB_APP_PASSWORD:-api_dev_password}@postgres:5432/${DB_NAME:-ohbeat}
+    MIGRATIONS_DATABASE_URL: postgresql+psycopg://${DB_OWNER_USER:-ohbeat_owner}:${DB_OWNER_PASSWORD:-owner_dev_password}@postgres:5432/${DB_NAME:-ohbeat}
     S3_INTERNAL_ENDPOINT: http://minio:9000
-    S3_ACCESS_KEY: ${MINIO_ROOT_USER}
-    S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-    RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/%2F
+    S3_ACCESS_KEY: ${MINIO_ROOT_USER:-ohbeat}
+    S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio_dev_password}
+    RABBITMQ_URL: amqp://${RABBITMQ_USER:-ohbeat}:${RABBITMQ_PASSWORD:-rabbit_dev_password}@rabbitmq:5672/%2F
     RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
     YOOKASSA_API_URL: http://yookassa-mock:8100/v3
+    # The SMS and email mock also writes into this "inbox": the end-to-end test reads the SMS code there
+    MOCK_INBOX_PATH: /var/mock-inbox/messages.jsonl
   volumes:
     - ./backend:/app
+    - mock-inbox:/var/mock-inbox
     # Documentation repository, read-only: tests compare the migration with schema.sql
     - ../OhBeat-System-Analysis:/spec:ro
 
@@ -24,12 +32,12 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      DB_OWNER_USER: ${DB_OWNER_USER}
-      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD}
-      DB_APP_USER: ${DB_APP_USER}
-      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres_dev_password}
+      DB_NAME: ${DB_NAME:-ohbeat}
+      DB_OWNER_USER: ${DB_OWNER_USER:-ohbeat_owner}
+      DB_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:-owner_dev_password}
+      DB_APP_USER: ${DB_APP_USER:-ohbeat_api}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-api_dev_password}
       TZ: UTC
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -37,7 +45,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME:-ohbeat}"]
       interval: 3s
       timeout: 3s
       retries: 30
@@ -45,8 +53,8 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-ohbeat}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbit_dev_password}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -64,8 +72,8 @@ services:
     image: ohbeat/minio:RELEASE.2025-04-22T22-12-26Z
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-ohbeat}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_dev_password}
       # Browser uploads files directly from the SPA origin (presigned POST)
       MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:5173
     ports:
@@ -144,16 +152,35 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Demo catalog: 16 beats of two Producers through the real path (API → MinIO → Media Worker).
+  # Runs once after the start and exits; a second run adds nothing (beats are matched by title).
+  demo-seed:
+    <<: *backend
+    command: ["python", "-m", "seeds.demo_beats"]
+    environment:
+      <<: *backend-env
+      DEMO_API_URL: http://api:8000/v1
+    restart: "no"
+    depends_on:
+      api:
+        condition: service_healthy
+      outbox-relay:
+        condition: service_started
+      media-results:
+        condition: service_started
+      media-worker:
+        condition: service_started
+
   # Media Worker: a separate service without HTTP and without database access
   media-worker:
     build: ./worker
     image: ohbeat/media-worker:dev
     environment:
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/%2F
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-ohbeat}:${RABBITMQ_PASSWORD:-rabbit_dev_password}@rabbitmq:5672/%2F
       RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
       S3_INTERNAL_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-ohbeat}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio_dev_password}
       # normal | unavailable — the mock antivirus can pretend to be down (ADR 0006)
       ANTIVIRUS_MODE: ${ANTIVIRUS_MODE:-normal}
     volumes:
@@ -170,8 +197,8 @@ services:
     build: ./yookassa_mock
     image: ohbeat/yookassa-mock:dev
     environment:
-      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
-      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-100500}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-test_mock_secret_key}
       MOCK_PUBLIC_URL: http://localhost:8100
       MOCK_WEBHOOK_URL: http://api:8000/v1/payments/webhook
       MOCK_DB_PATH: /data/yookassa.sqlite3
@@ -204,7 +231,34 @@ services:
       api:
         condition: service_healthy
 
+  # End-to-end test of the whole path (ADR 0005). Not started by `up`; run it with
+  #   docker compose --profile e2e run --rm e2e
+  # Playwright of the same version as in frontend/package.json, with Chromium and WebKit inside.
+  e2e:
+    profiles: ["e2e"]
+    image: mcr.microsoft.com/playwright:v1.48.2-jammy
+    working_dir: /app
+    command: ["npx", "playwright", "test"]
+    ipc: host
+    environment:
+      E2E_FRONTEND: frontend:5173
+      E2E_MINIO: minio:9000
+      E2E_YOOKASSA: yookassa-mock:8100
+      E2E_INBOX: /var/mock-inbox/messages.jsonl
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - mock-inbox:/var/mock-inbox:ro
+    depends_on:
+      frontend:
+        condition: service_started
+      media-worker:
+        condition: service_started
+      yookassa-mock:
+        condition: service_healthy
+
 volumes:
+  mock-inbox:
   yookassa-data:
   pgdata:
   rabbitmqdata:
