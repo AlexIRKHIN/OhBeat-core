@@ -15,11 +15,13 @@ log = logging.getLogger(__name__)
 class ApiError(Exception):
     """Business error. The message is looked up by error_code in app/common/i18n.py."""
 
-    def __init__(self, status_code: int, error_code: str, details: list[dict] | None = None):
+    def __init__(self, status_code: int, error_code: str, details: list[dict] | None = None,
+                 headers: dict[str, str] | None = None):
         super().__init__(error_code)
         self.status_code = status_code
         self.error_code = error_code
         self.details = details or []
+        self.headers = headers  # e.g. Retry-After of a 429
 
 
 def field_error(field: str, issue_key: str, **params: object) -> ApiError:
@@ -79,7 +81,7 @@ def _issue(error: dict) -> str:
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def handle_api_error(_: Request, exc: ApiError) -> JSONResponse:
-        return JSONResponse(error_body(exc.error_code, exc.details), status_code=exc.status_code)
+        return JSONResponse(error_body(exc.error_code, exc.details), status_code=exc.status_code, headers=exc.headers)
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation(_: Request, exc: RequestValidationError) -> JSONResponse:

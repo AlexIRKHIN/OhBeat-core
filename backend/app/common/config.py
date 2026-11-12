@@ -61,6 +61,15 @@ class Settings(BaseSettings):
     # GAP-35: a held payment not settled this long after its webhook is settled by the scheduler
     payment_settle_after_seconds: int = 60
 
+    # Signature by SMS code (RFC ПЭП, NFR-31). The secret makes the stored HMAC of a 6-digit code useless
+    # without .env: plain SHA-256 of a million variants is brute-forced in a moment.
+    otp_secret: str = ""
+    otp_ttl_seconds: int = 300  # 5 minutes
+    otp_max_attempts: int = 3
+    otp_resend_seconds: int = 60
+    otp_hourly_limit: int = 5  # per user
+    sms_mode: str = "normal"  # normal | unavailable — the SMS mock can pretend to be down (GAP-72)
+
     cors_origins: list[str] = ["http://localhost:5173"]
 
 

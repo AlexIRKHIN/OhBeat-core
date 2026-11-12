@@ -91,3 +91,4 @@ class SignatureOtp(Base):
     attempts: Mapped[int] = mapped_column(SmallInteger, default=0)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())  # GAP-70, 0003

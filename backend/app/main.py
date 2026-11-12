@@ -19,6 +19,7 @@ from app.dictionaries.router import router as dictionaries_router
 from app.orders.router import router as orders_router
 from app.payments.router import router as payments_router
 from app.purchases.router import router as purchases_router
+from app.signature.router import router as signature_router
 from app.users.router import router as users_router
 
 # Messages of the modules (payments, notifications mock) next to the uvicorn ones: docker compose logs api
@@ -55,6 +56,7 @@ app.include_router(catalog_router, prefix=API_PREFIX)
 app.include_router(orders_router, prefix=API_PREFIX)
 app.include_router(payments_router, prefix=API_PREFIX)
 app.include_router(purchases_router, prefix=API_PREFIX)
+app.include_router(signature_router, prefix=API_PREFIX)
 
 
 @app.get("/health", include_in_schema=False)
