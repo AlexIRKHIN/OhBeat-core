@@ -103,6 +103,7 @@ function UploadForm({ dictionaries, source }: { dictionaries: Dictionaries; sour
     setValue,
     setError,
     trigger,
+    getFieldState,
     formState: { errors, isValid },
   } = useForm<FormValues>({ resolver: zodResolver(schema), mode: "onTouched", defaultValues: defaults });
 
@@ -473,6 +474,10 @@ function UploadForm({ dictionaries, source }: { dictionaries: Dictionaries; sour
                     {...register(`licenses.${code}.price`, {
                       onChange: (e) => {
                         e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        // An error shown under the price goes away as soon as the price is right, not on blur:
+                        // otherwise the first click elsewhere removes the line, the form jumps up and the click
+                        // misses its target (the next checkbox or "Publish") — found by the end-to-end test.
+                        if (getFieldState(`licenses.${code}.price`).error) void trigger(`licenses.${code}.price`);
                       },
                     })}
                   />
