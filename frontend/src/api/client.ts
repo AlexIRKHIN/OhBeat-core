@@ -13,6 +13,9 @@ export interface ApiErrorDetail {
   beat_id?: number;
   license?: string;
   price?: number;
+  // signature by SMS code (RFC ПЭП §4, GAP-73)
+  attempts_left?: number;
+  retry_after?: number;
 }
 
 export class ApiError extends Error {

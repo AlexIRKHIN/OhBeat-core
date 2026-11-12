@@ -1,7 +1,7 @@
 // Order (REST API §2.6, wider by GAP-63): status, items with contract numbers, totals and,
-// for Exclusive, how long the reservation lasts (FR-18). "Go to payment" leaves for YooKassa (FR-20).
+// for Exclusive, how long the reservation lasts (FR-18) and the signature by SMS code (RFC ПЭП).
+// "Go to payment" leaves for YooKassa (FR-20).
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
@@ -9,10 +9,12 @@ import { ApiError, api } from "../api/client";
 import type { Order } from "../api/types";
 import { useDictionaries } from "../components/BeatBrowser";
 import { DownloadLinks } from "../components/DownloadLinks";
+import { SignaturePanel } from "../components/SignaturePanel";
 import { ErrorState, LoadingState, NotFoundPage, PageTitle, Spinner } from "../components/ui";
 import { formatRub } from "../lib/catalog";
 import { errorText } from "../lib/errors";
 import { usePay } from "../lib/payment";
+import { timeLeft, useNow } from "../lib/time";
 import { formatMoscowDateTime } from "../lib/validation";
 import { Totals } from "./CartPage";
 
@@ -22,24 +24,6 @@ const STATUS_CLASS: Record<Order["status"], string> = {
   expired: "border-line text-muted",
   canceled: "border-danger/60 text-danger",
 };
-
-/** "14:59" until the moment, null once it has passed. */
-export function timeLeft(until: string, now: number): string | null {
-  const ms = new Date(until).getTime() - now;
-  if (ms <= 0) return null;
-  const total = Math.floor(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-function useNow(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!active) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [active]);
-  return now;
-}
 
 export function OrderPage() {
   const { t } = useTranslation();
@@ -109,6 +93,9 @@ export function OrderPage() {
           )}
         </aside>
       </div>
+
+      {/* RFC ПЭП §3: Exclusive is signed with an SMS code while the reservation lasts */}
+      {o.status === "pending" && o.requires_signature && !o.signed && left && <SignaturePanel order={o} />}
     </div>
   );
 }
@@ -131,6 +118,7 @@ export function PayPanel({ order }: { order: Order }) {
         </p>
       )}
       {needsSignature && <p className="text-sm text-orange">{t("order.signatureNeeded")}</p>}
+      {order.requires_signature && order.signed && <p className="text-sm text-cyan">{t("signature.done")}</p>}
       {holding ? (
         <p className="text-sm text-soft">{t("payment.processing")}</p>
       ) : (
